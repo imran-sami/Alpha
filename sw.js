@@ -1,6 +1,7 @@
-const C='alpha-v16',F=['./','index.html','manifest.webmanifest','apple-touch-180.png','icon-v9-192.png','icon-v9-512.png','icon-v9-1024.png','icon-v9-maskable-192.png','icon-v9-maskable-512.png','icon-v9-maskable-1024.png'];
-self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(F)).then(()=>self.skipWaiting()))});
+const C='alpha-v29',F=['./','index.html','manifest.webmanifest','apple-touch-180.png','icon-v9-192.png','icon-v9-512.png','icon-v9-1024.png','icon-v9-maskable-192.png','icon-v9-maskable-512.png','icon-v9-maskable-1024.png'],
+ E=['pdfjs/pdf.classic.js','pdfjs/pdf.worker.classic.js','pdfjs/pdf.compat.js','pdfjs/pdf.worker.compat.js','pdfjs/standard_fonts/FoxitFixed.pfb','pdfjs/standard_fonts/FoxitDingbats.pfb','pdfjs/standard_fonts/LiberationSans-Regular.ttf','pdfjs/standard_fonts/LiberationSans-Bold.ttf','pdfjs/standard_fonts/FoxitSerif.pfb','pdfjs/standard_fonts/FoxitSymbol.pfb','pdfjs/wasm/openjpeg.wasm','pdfjs/wasm/jbig2.wasm','pdfjs/wasm/qcms_bg.wasm'];
+self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(async c=>{await c.addAll(F);await Promise.all(E.map(u=>c.add(u).catch(()=>{})))}).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!=C).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{const r=e.request;if(r.method!='GET')return;const u=new URL(r.url);
-if(u.origin!=location.origin&&!/fonts\.(googleapis|gstatic)\.com$/.test(u.hostname))return;
-e.respondWith(fetch(r).then(res=>{if(res.ok||res.type=='opaque'){const cp=res.clone();caches.open(C).then(c=>c.put(r,cp))}return res}).catch(()=>caches.match(r).then(m=>m||(r.mode=='navigate'?caches.match('index.html'):Response.error()))))});
+if(u.origin!=location.origin&&!/^(fonts\.(googleapis|gstatic)\.com|cdnjs\.cloudflare\.com)$/.test(u.hostname))return;
+e.respondWith(fetch(r).then(res=>{if(res.ok||res.type=='opaque'){const cp=res.clone();caches.open(C).then(c=>c.put(r,cp))}return res}).catch(()=>caches.match(r,{ignoreSearch:true}).then(m=>m||(r.mode=='navigate'?caches.match('index.html'):Response.error()))))});
