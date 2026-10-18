@@ -1,0 +1,31 @@
+name: Unzip app.zip
+
+on:
+  push:
+    paths:
+      - 'app.zip'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  unzip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Replace repo files with contents of app.zip
+        run: |
+          mkdir /tmp/new
+          unzip -q app.zip -d /tmp/new
+          find . -mindepth 1 -maxdepth 1 ! -name '.git' ! -name '.github' ! -name 'app.zip' -exec rm -rf {} +
+          cp -a /tmp/new/. .
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "Unzip app.zip"
+          git push
