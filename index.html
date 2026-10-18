@@ -1300,11 +1300,11 @@ O.notepad=function(raw,host,opt){
  opt=opt||{};const MAX=6e6;let more=0,txt=raw;if(txt.length>MAX){more=txt.length-MAX;txt=txt.slice(0,MAX)}
  const crlf=(txt.match(/\r\n/g)||[]).length,lf=(txt.match(/(^|[^\r])\n/g)||[]).length,cr=(txt.match(/\r(?!\n)/g)||[]).length;
  const eol=crlf>=lf&&crlf>=cr&&crlf?'crlf':cr>lf&&cr>crlf?'cr':lf?'lf':(opt.eol||'crlf');
- const shown=txt.replace(/\r\n?/g,'\n');
+ let shown=txt.replace(/\r\n?/g,'\n');const canEdit=!!opt.onVaultSave&&!opt.inline&&!more;
  host.innerHTML='';const app=O.h('div','np-app'+(opt.inline?' np-in':'')+(opt.fill?' ofx-fill':''));
- app.innerHTML='<div class="np-menu"><button data-m="file">File</button><button data-m="edit">Edit</button><button data-m="fmt">Format</button><button data-m="view">View</button><span class="sp"></span></div>'+
+ app.innerHTML='<div class="np-menu"><button data-m="file">File</button><button data-m="edit">Edit</button><button data-m="fmt">Format</button><button data-m="view">View</button><span class="sp"></span>'+(canEdit?'<button data-a="vsave" class="np-sv">💾 Save</button>':'')+'</div>'+
   '<div class="np-find" hidden><input type="search" placeholder="Find" aria-label="Find"><button data-f="prev" aria-label="Previous">▲</button><button data-f="next" aria-label="Next">▼</button><span class="c"></span><button data-f="x" aria-label="Close">✕</button></div>'+
-  '<textarea class="np-ta" readonly spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-label="Text"></textarea>'+
+  '<textarea class="np-ta"'+(canEdit?'':' readonly')+' spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-label="Text"></textarea>'+
   '<div class="np-st"><span class="ln">Ln 1, Col 1</span><span class="ch hide-sm"></span><span class="sp"></span><span class="zm">100%</span><span class="eo hide-sm">'+EOLN[eol]+'</span><span class="en">'+E(opt.enc||'UTF-8')+'</span></div>';
  host.appendChild(app);
  const ta=app.querySelector('.np-ta'),st=app.querySelector('.np-st'),menu=app.querySelector('.np-menu'),fd=app.querySelector('.np-find'),fi=fd.querySelector('input'),fcnt=fd.querySelector('.c');
@@ -1320,7 +1320,7 @@ O.notepad=function(raw,host,opt){
  document.addEventListener('selectionchange',function f(){if(!app.isConnected){document.removeEventListener('selectionchange',f);return}if(document.activeElement===ta)upPos()});
  /* menus */
  const items={
-  file:[['⬇','Save a copy','','save']],
+  file:(canEdit?[['💾','Save','Ctrl+S','vsave']]:[]).concat([['⬇','Save a copy','','save']]),
   edit:[['','Copy all','Ctrl+C','copy'],['','Select all','Ctrl+A','all'],['','Find…','Ctrl+F','find'],['','Go to line…','Ctrl+G','goto']],
   fmt:[['✓','Word wrap','','wrap'],['','Increase font size','Ctrl +','zin'],['','Decrease font size','Ctrl −','zout']],
   view:[['','Zoom in','Ctrl +','zin'],['','Zoom out','Ctrl −','zout'],['','Restore default zoom','Ctrl 0','zrs'],['✓','Status bar','','status']]};
@@ -1328,10 +1328,13 @@ O.notepad=function(raw,host,opt){
  const closeDd=()=>{if(dd){dd.remove();dd=null}menu.querySelectorAll('button').forEach(b=>b.classList.remove('on'))};
  const openDd=(k,btn)=>{const same=btn.classList.contains('on');closeDd();if(same)return;btn.classList.add('on');dd=O.h('div','np-dd on');dd.style.left=btn.offsetLeft+'px';
   dd.innerHTML=items[k].map(it=>{let ic=it[0];if(it[3]=='wrap')ic=S.wrap?'✓':'';if(it[3]=='status')ic=S.status?'✓':'';return'<button data-a="'+it[3]+'"><i>'+ic+'</i>'+E(it[1])+(it[2]?'<kbd>'+it[2]+'</kbd>':'')+'</button>'}).join('');menu.appendChild(dd)};
- const doSave=()=>{if(opt.onSave)return opt.onSave();const b=opt.blob||new Blob([raw],{type:'text/plain'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=opt.name||'text.txt';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)};
+ let dirty=false,edited=false;const svBtn=app.querySelector('.np-sv'),setDirty=d=>{dirty=d;if(svBtn)svBtn.classList.toggle('dirty',d)},toEol=s=>eol=='crlf'?s.replace(/\n/g,'\r\n'):eol=='cr'?s.replace(/\n/g,'\r'):s;
+ const doVSave=async()=>{if(!canEdit)return;try{await opt.onVaultSave(toEol(ta.value));setDirty(false)}catch(e){if(opt.toast)opt.toast('Could not save')}};
+ if(canEdit)ta.addEventListener('input',()=>{shown=ta.value;nlIdx=null;raw=shown;edited=true;setDirty(true)});
+ const doSave=()=>{if(opt.onSave)return opt.onSave();const b=(edited?null:opt.blob)||new Blob([toEol(ta.value)],{type:'text/plain'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=opt.name||'text.txt';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)};
  const copyAll=()=>{const t=raw;const done=()=>{if(opt.toast)opt.toast('Copied')};try{navigator.clipboard.writeText(t).then(done,fb)}catch(e){fb()}function fb(){ta.select();try{document.execCommand('copy');done()}catch(e){}}};
  const act=a=>{closeDd();
-  if(a=='save')doSave();else if(a=='copy')copyAll();else if(a=='all'){ta.focus();ta.select();upPos()}
+  if(a=='save')doSave();else if(a=='vsave')doVSave();else if(a=='copy')copyAll();else if(a=='all'){ta.focus();ta.select();upPos()}
   else if(a=='find')openFind();else if(a=='goto'){const v=prompt('Go to line (1 – '+(nls().length+1)+'):','1');if(v){const n=Math.max(1,Math.min(nls().length+1,parseInt(v,10)||1)),a2=nls(),pos=n==1?0:a2[n-2]+1;jump(pos,pos)}}
   else if(a=='wrap'){S.wrap=S.wrap?0:1;applyFmt()}else if(a=='status'){S.status=S.status?0:1;applyFmt()}
   else if(a=='zin'){S.zoom=Math.min(500,S.zoom+10);applyFmt()}else if(a=='zout'){S.zoom=Math.max(20,S.zoom-10);applyFmt()}else if(a=='zrs'){S.zoom=100;applyFmt()}};
@@ -1351,14 +1354,14 @@ O.notepad=function(raw,host,opt){
  const closeFind=()=>{fd.hidden=true;ta.focus({preventScroll:true})};
  fi.addEventListener('input',run);fi.addEventListener('keydown',e=>{e.stopPropagation();if(e.key=='Enter'){e.preventDefault();if(fi.value!==fq)run();else go(e.shiftKey?-1:1)}else if(e.key=='Escape'){e.preventDefault();closeFind()}});
  fd.addEventListener('click',e=>{const b=e.target.closest('[data-f]');if(!b)return;const f=b.dataset.f;if(f=='x')closeFind();else{if(fi.value!==fq)run();else go(f=='next'?1:-1)}});
- app.addEventListener('keydown',e=>{const c=e.ctrlKey||e.metaKey;if(c&&(e.key=='f'||e.key=='F')){e.preventDefault();e.stopPropagation();openFind()}else if(c&&(e.key=='g'||e.key=='G')){e.preventDefault();act('goto')}
+ app.addEventListener('keydown',e=>{const c=e.ctrlKey||e.metaKey;if(c&&(e.key=='s'||e.key=='S')&&canEdit){e.preventDefault();e.stopPropagation();doVSave();return}if(c&&(e.key=='f'||e.key=='F')){e.preventDefault();e.stopPropagation();openFind()}else if(c&&(e.key=='g'||e.key=='G')){e.preventDefault();act('goto')}
   else if(c&&(e.key=='+'||e.key=='=')){e.preventDefault();act('zin')}else if(c&&e.key=='-'){e.preventDefault();act('zout')}else if(c&&e.key=='0'){e.preventDefault();act('zrs')}
   else if(e.key=='Escape'&&dd){e.stopPropagation();closeDd()}else if(e.key=='Escape'&&!fd.hidden){e.stopPropagation();closeFind()}});
  ta.addEventListener('wheel',e=>{if(e.ctrlKey){e.preventDefault();act(e.deltaY<0?'zin':'zout')}},{passive:false});
  {let d0=0,z0=100;ta.addEventListener('touchstart',e=>{if(e.touches.length==2){d0=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);z0=S.zoom}},{passive:true});
   ta.addEventListener('touchmove',e=>{if(e.touches.length==2&&d0){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);S.zoom=Math.max(40,Math.min(400,Math.round(z0*d/d0/10)*10));applyFmt()}},{passive:true});ta.addEventListener('touchend',()=>{d0=0},{passive:true})}
  applyFmt();upPos();
- return{app,ta,destroy(){closeDd()}}};
+ return{app,ta,destroy(){closeDd()},dirty:()=>dirty,save:doVSave}};
 })();
 
 /* ===== OFX: PowerPoint-style presentation viewer (.pptx) — real slide rendering, thumbnails, full-screen slide show ===== */
@@ -2224,7 +2227,7 @@ async function pdfView(f,blob,B,tb,live,from){B.innerHTML='<div class="msg"><div
  let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{if(pdfDoc===doc)setZ(zm)},300)})}
 
 /* ---------- viewer ---------- */
-const hdr=(f,k)=>`<div class="rh"><button class="chip" id="rbk" title="Back" style="font-size:20px;line-height:1;padding:8px 14px">‹</button><div class="rt"><b>${esc(f.name)}</b><span>${esc((ext(f.name)||'file').toUpperCase())} · ${sz(f.size)}</span></div><button class="chip" id="rfs" title="Full screen" aria-label="Full screen">⛶</button><button class="chip" id="rif" title="Details">ⓘ</button>${['txt','md','json','csv','html'].includes(k)&&istx(f)&&!f.ch?'<button class="chip" id="red" title="Edit">✎</button>':''}<a class="chip" id="rsv" title="Save" download="${esc(f.name)}">⬇</a></div><div class="tb" id="rtb"></div><div class="rb" id="rbd"></div>${sib.length>1?'<div class="pn"><button class="chip" id="rpv" title="Previous file">◀</button><span>'+(sib.indexOf(String(f.id))+1)+' / '+sib.length+'</span><button class="chip" id="rnx" title="Next file">▶</button></div>':''}`;
+const hdr=(f,k)=>`<div class="rh"><button class="chip" id="rbk" title="Back" style="font-size:20px;line-height:1;padding:8px 14px">‹</button><div class="rt"><b>${esc(f.name)}</b><span>${esc((ext(f.name)||'file').toUpperCase())} · ${sz(f.size)}</span></div><button class="chip" id="rfs" title="Full screen" aria-label="Full screen">⛶</button><button class="chip" id="rif" title="Details">ⓘ</button>${((['txt','md','json','csv','html'].includes(k)&&istx(f))||k=='docx')&&!f.ch?'<button class="chip" id="red" title="Edit">✎</button>':''}<a class="chip" id="rsv" title="Save" download="${esc(f.name)}">⬇</a></div><div class="tb" id="rtb"></div><div class="rb" id="rbd"></div>${sib.length>1?'<div class="pn"><button class="chip" id="rpv" title="Previous file">◀</button><span>'+(sib.indexOf(String(f.id))+1)+' / '+sib.length+'</span><button class="chip" id="rnx" title="Next file">▶</button></div>':''}`;
 const tbBtn=(id,l,on)=>`<button class="chip${on?' on':''}" data-t="${id}">${l}</button>`;
 
 function textTools(txt,opt){ // font / wrap / lines / copy
@@ -2244,7 +2247,7 @@ function srcView(txt,opt){const B=q('#rbd'),L=txt.replace(/\r\n?/g,'\n').split('
 function tabs(list,cur2,cb){return list.map(([id,l])=>tbBtn('v:'+id,l,id==cur2)).join('')}
 
 async function renderBody(f,k,buf,blob,my){
- const B=q('#rbd'),tb=q('#rtb');
+ const B=q('#rbd'),tb=q('#rtb');curK=k;
  const live=()=>my==tok;
  if(k=='img'||k=='heic'){B.innerHTML=`<div class="imgv"><img src="${url}" alt=""></div>`;zoom=0;const v=B.firstChild,im=v.firstChild;
   tb.innerHTML=`<button class="chip" data-t="zo">－</button><button class="chip" data-t="zi">＋</button><button class="chip" data-t="zf">Fit</button><span class="sp"></span>`;
@@ -2273,7 +2276,7 @@ async function renderBody(f,k,buf,blob,my){
  const txt=dec(buf);if(!live())return;
  const e=ext(f.name),code=isCode(f)||k=='json',opt={codeLike:code,sans:k=='txt'&&!code};
  if(!txt.trim()){B.innerHTML=msgH(f,'📭','This file is empty.');return}
- if(k=='txt'&&!code){setK('txt',1);tb.innerHTML='';tb.onclick=null;B.style.cssText='position:relative;overflow:hidden';const u8=new Uint8Array(buf,0,Math.min(buf.byteLength,4)),enc=u8[0]==0xEF&&u8[1]==0xBB&&u8[2]==0xBF?'UTF-8 with BOM':u8[0]==0xFF&&u8[1]==0xFE?'UTF-16 LE':u8[0]==0xFE&&u8[1]==0xFF?'UTF-16 BE':(()=>{try{new TextDecoder('utf-8',{fatal:true}).decode(buf);return'UTF-8'}catch(x){return'ANSI'}})();ctl=OFX.notepad(txt,B,{fill:true,name:f.name,blob,enc,toast});try{ctl.ta.focus({preventScroll:true})}catch(x){}return}
+ if(k=='txt'&&!code){setK('txt',1);tb.innerHTML='';tb.onclick=null;B.style.cssText='position:relative;overflow:hidden';const u8=new Uint8Array(buf,0,Math.min(buf.byteLength,4)),enc=u8[0]==0xEF&&u8[1]==0xBB&&u8[2]==0xBF?'UTF-8 with BOM':u8[0]==0xFF&&u8[1]==0xFE?'UTF-16 LE':u8[0]==0xFE&&u8[1]==0xFF?'UTF-16 BE':(()=>{try{new TextDecoder('utf-8',{fatal:true}).decode(buf);return'UTF-8'}catch(x){return'ANSI'}})();ctl=OFX.notepad(txt,B,{fill:true,name:f.name,blob,enc,toast,onVaultSave:(!f.ch&&buf.byteLength<6e6)?(v)=>saveText(f,v,enc):null});try{ctl.ta.focus({preventScroll:true})}catch(x){}return}
  const mount=(mode)=>{
   if(k=='md'){tb.innerHTML=tabs([['r','📖 Read'],['s','</> Source']],mode)+'<span class="sp"></span>'+(mode=='r'?`<button class="chip" data-t="fm">A−</button><button class="chip" data-t="fp">A＋</button>`:textTools(txt,{codeLike:1}).replace(/<button class="chip" data-t="cp">.*$/,''))+'<button class="chip" data-t="cp">⧉ Copy</button>';
    if(mode=='r')B.innerHTML=`<div class="pg pro">${md(txt)}</div>`;else srcView(txt,{codeLike:1})}
@@ -2296,7 +2299,7 @@ const msgH=(f,ic,t)=>`<div class="msg"><div class="ic">${ic}</div><h2>${esc(f.na
 async function emptyView(f){q('#rbd').innerHTML=`<div class="msg"><div class="ic">⚠️</div><h2>${esc(f.name)}</h2><p>This file was not saved completely (the upload may have been interrupted), so there is nothing to show. Remove it and upload it again.</p><button class="btn stop" id="rmx">🗑 Move to Trash</button></div>`;q('#rmx').onclick=async()=>{f.trash=Date.now();await svf(f);toast('Moved to trash');closeV();if(view=='fc')fcPage(fcur);else if(view=='vault')V.vault()}}
 function lockedView(f){q('#rbd').innerHTML=`<div class="msg"><div class="ic">🔐</div><h2>${esc(f.name)}</h2><p>This file could not be unlocked with the lock you are using now. It may have been saved under an earlier PIN (for example before a reset). Lock and unlock once more; if it still fails the file cannot be recovered.</p></div>`}
 async function openV(id,keep){
- const my=++tok,f=await gf(id);if(!f)return;
+ const my=++tok,f=await gf(id);if(!f)return;EDS=null;
  R.style.setProperty('--rfs',P.fs+'px');
  freeCtl();if(url){URL.revokeObjectURL(url);url=null}killPdf();XU.splice(0).forEach(u=>URL.revokeObjectURL(u));
  cur=f;let k=kindOf(f),blob=null;
@@ -2322,7 +2325,7 @@ async function openV(id,keep){
   url=URL.createObjectURL(blob);
   const buf=NEEDBUF.has(k)?await blob.arrayBuffer():null;if(my!=tok)return;
   const a=q('#rsv');if(a)a.href=url;
-  await renderBody(f,k,buf,blob,my);
+  await renderBody(f,k,buf,blob,my);if(my==tok)addEditChip(f);
   if(my==tok){const b=q('#rbd');if(b)b.scrollTop=0}
  }catch(e){if(my==tok){try{if(blob)await infoView(blob,'Something went wrong while showing this file ('+((e&&e.message)||e)+'). The file itself is fine — you can save it or look inside it with the tabs above.');else q('#rbd').innerHTML=msgH(f,'📄','Could not open this file.')}catch(x){}}}
 }
@@ -2330,12 +2333,167 @@ function wire(f){
  q('#rbk').onclick=()=>closeV();
  const fsb=q('#rfs');if(fsb)fsb.onclick=()=>OFX.toggleFS(R);
  q('#rif').onclick=()=>{closeV(true);fileP(f.id)};
- const ed=q('#red');if(ed)ed.onclick=()=>{closeV(true);edP(f)};
- const go2=d=>{const i=sib.indexOf(String(f.id)),n=sib[(i+d+sib.length)%sib.length];if(n!==undefined)openV(n,true)};
+ const ed=q('#red');if(ed)ed.onclick=()=>startEdit(f);
+ const go2=d=>{if(!leaveOk())return;const i=sib.indexOf(String(f.id)),n=sib[(i+d+sib.length)%sib.length];if(n!==undefined)openV(n,true)};
  const pv=q('#rpv'),nx=q('#rnx');if(pv)pv.onclick=()=>go2(-1);if(nx)nx.onclick=()=>go2(1)}
-function hide(){tok++;freeCtl();if(OFX.fsEl()===R)OFX.exitFS();R.classList.remove('pfs');document.documentElement.classList.remove('pfs-lock');setK(null);killPdf();XU.splice(0).forEach(u=>URL.revokeObjectURL(u));R.classList.remove('on');R.innerHTML='';if(url){URL.revokeObjectURL(url);url=null}cur=null}
-function closeV(noHist){const had=history.state&&history.state.rdr;hide();if(had){try{history.back()}catch(e){}}}
-addEventListener('popstate',()=>{if(R.classList.contains('on'))hide()});
+/* ===== in-viewer editing: text / code / docx (added) ===== */
+let curK='',EDS=null;
+(()=>{const s=document.createElement('style');s.textContent=`
+.edw{padding:10px;box-sizing:border-box;min-height:100%;display:flex;flex-direction:column}
+.edw textarea{flex:1;width:100%;min-height:calc(100vh - 190px);min-height:calc(100dvh - 190px);border:1px solid var(--bd);border-radius:14px;padding:14px;background:var(--card);color:var(--tx);font:var(--rfs,14px)/1.55 ui-monospace,Menlo,Consolas,monospace;outline:none;resize:none;tab-size:4;white-space:pre;overflow:auto;-webkit-overflow-scrolling:touch}
+.edw textarea.wr{white-space:pre-wrap;overflow-wrap:anywhere}
+.tb .edst{font-size:12px;opacity:.7;white-space:nowrap;align-self:center;padding:0 6px}
+.np-menu .np-sv{margin-left:auto;font-weight:700}.np-menu .np-sv.dirty{background:#c43e1c!important;color:#fff!important}
+.dxw{padding:12px;background:#e4e4ea;min-height:100%;box-sizing:border-box}
+.dxn{max-width:820px;margin:0 auto 10px;font-size:12.5px;color:#444;line-height:1.4}
+.dxp{max-width:820px;margin:0 auto;background:#fff;color:#111;border-radius:8px;padding:22px 22px;box-shadow:0 2px 14px rgba(0,0,0,.15)}
+.dxp textarea{display:block;width:100%;border:0;border-radius:6px;padding:4px 6px;margin:0 0 2px;background:transparent;color:#111;font:16px/1.5 Calibri,Carlito,"Segoe UI",system-ui,-apple-system,sans-serif;resize:none;overflow:hidden;outline:none;box-sizing:border-box}
+.dxp textarea:focus{background:#f1efff;box-shadow:0 0 0 2px #6d4aff66}
+.dxp textarea[readonly]{color:#888;background:#f4f4f6;font-style:italic;cursor:not-allowed}
+.dxp textarea.h{font-weight:700;font-size:20px}
+.dxp textarea.itb{border-left:3px solid #cfcfe0;border-radius:0 6px 6px 0}
+`;document.head.appendChild(s)})();
+const te8=new TextEncoder(),EDK=['txt','md','json','csv','html'];
+function encOf(u,buf){return u[0]==0xEF&&u[1]==0xBB&&u[2]==0xBF?'UTF-8 with BOM':u[0]==0xFF&&u[1]==0xFE?'UTF-16 LE':u[0]==0xFE&&u[1]==0xFF?'UTF-16 BE':(()=>{try{new TextDecoder('utf-8',{fatal:true}).decode(buf);return'UTF-8'}catch(x){return'ANSI'}})()}
+function encText(t,en){
+ if(en=='UTF-16 LE'||en=='UTF-16 BE'){const le=en=='UTF-16 LE',u=new Uint8Array(2+t.length*2);u[0]=le?0xFF:0xFE;u[1]=le?0xFE:0xFF;for(let i=0;i<t.length;i++){const c=t.charCodeAt(i);if(le){u[2+i*2]=c&255;u[3+i*2]=c>>8}else{u[2+i*2]=c>>8;u[3+i*2]=c&255}}return u}
+ const b=te8.encode(t);if(en=='UTF-8 with BOM'){const u=new Uint8Array(b.length+3);u.set([0xEF,0xBB,0xBF]);u.set(b,3);return u}return b}
+const eolOf=t=>{const a=(t.match(/\r\n/g)||[]).length,b=(t.match(/(^|[^\r])\n/g)||[]).length,c=(t.match(/\r(?!\n)/g)||[]).length;return a&&a>=b&&a>=c?'crlf':c>b&&c>a?'cr':'lf'};
+const toEolS=(s,e)=>e=='crlf'?s.replace(/\n/g,'\r\n'):e=='cr'?s.replace(/\n/g,'\r'):s;
+async function commitFile(f,bytes){
+ f.d=await en(bytes);f.size=bytes.length;f.edited=Date.now();await svf(f);
+ const sp=q('.rt span');if(sp)sp.textContent=(ext(f.name)||'file').toUpperCase()+' · '+sz(f.size);
+ try{if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(new Blob([bytes],{type:fmime(f)}));const a=q('#rsv');if(a)a.href=url}catch(e){}}
+async function saveText(f,v,encName){await commitFile(f,encText(v,encName));toast(encName=='ANSI'?'Saved (as UTF-8)':'Saved ✓')}
+const dirtyNow=()=>!!((ctl&&ctl.dirty&&ctl.dirty())||(EDS&&EDS.dirty()));
+const leaveOk=()=>!dirtyNow()||confirm('Unsaved changes will be lost. Leave without saving?');
+addEventListener('beforeunload',e=>{if(dirtyNow()){e.preventDefault();e.returnValue=''}});
+
+/* --- zip writer (to save an edited .docx) --- */
+const CRCT=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+const crc32=u=>{let c=0xFFFFFFFF;for(let i=0;i<u.length;i++)c=CRCT[(c^u[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0};
+async function defl(u){const cs=new CompressionStream('deflate-raw'),w=cs.writable.getWriter();w.write(u);w.close();return new Uint8Array(await new Response(cs.readable).arrayBuffer())}
+async function zipBuild(z,rep){
+ const out=[],cen=[];let off=0;const d=new Date(),dt=((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate(),tm=(d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1);
+ for(const name of z.names){if(name.endsWith('/'))continue;const data=rep[name]||await z.bin(name);if(!data)continue;
+  const crc=crc32(data);let m=0,c=data;if(data.length>128&&typeof CompressionStream!='undefined'){try{const x=await defl(data);if(x.length<data.length){c=x;m=8}}catch(e){}}
+  const nb=te8.encode(name),lh=new Uint8Array(30+nb.length),v=new DataView(lh.buffer);
+  v.setUint32(0,0x04034b50,true);v.setUint16(4,20,true);v.setUint16(6,0x0800,true);v.setUint16(8,m,true);v.setUint16(10,tm,true);v.setUint16(12,dt,true);v.setUint32(14,crc,true);v.setUint32(18,c.length,true);v.setUint32(22,data.length,true);v.setUint16(26,nb.length,true);lh.set(nb,30);
+  out.push(lh,c);
+  const ch=new Uint8Array(46+nb.length),w=new DataView(ch.buffer);
+  w.setUint32(0,0x02014b50,true);w.setUint16(4,20,true);w.setUint16(6,20,true);w.setUint16(8,0x0800,true);w.setUint16(10,m,true);w.setUint16(12,tm,true);w.setUint16(14,dt,true);w.setUint32(16,crc,true);w.setUint32(20,c.length,true);w.setUint32(24,data.length,true);w.setUint16(28,nb.length,true);w.setUint32(42,off,true);ch.set(nb,46);cen.push(ch);
+  off+=lh.length+c.length}
+ let cs=0;for(const c of cen)cs+=c.length;const e=new Uint8Array(22),w=new DataView(e.buffer);
+ w.setUint32(0,0x06054b50,true);w.setUint16(8,cen.length,true);w.setUint16(10,cen.length,true);w.setUint32(12,cs,true);w.setUint32(16,off,true);
+ return new Uint8Array(await new Blob([...out,...cen,e]).arrayBuffer())}
+
+/* --- entry point (pencil button, Edit chip, double-click) --- */
+async function startEdit(f,pos){
+ if(!f)return;if(f.ch||f.size>8e6){toast('This file is too large to edit here');return}
+ if(EDS)return;const nk=kindOf(f);
+ if(nk=='docx'&&curK=='docx')return docxEdit(f);
+ if(EDK.includes(nk)&&curK==nk){if(ctl&&ctl.ta){ctl.ta.focus();return}return textEdit(f,pos)}
+ toast('This file cannot be edited here')}
+function addEditChip(f){
+ try{const tb=q('#rtb');if(!tb||!f||f.ch||f.size>8e6)return;const nk=kindOf(f);
+  if(nk!=curK||!(nk=='docx'||EDK.includes(nk))||(ctl&&ctl.ta))return;
+  const put=()=>{if(EDS)return;if(!tb.querySelector('[data-t="ed"]'))tb.insertAdjacentHTML('afterbegin','<button class="chip on" data-t="ed">✎ Edit</button>')};
+  put();new MutationObserver(put).observe(tb,{childList:true})}catch(e){}}
+R.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-t="ed"]');if(b){e.preventDefault();e.stopPropagation();startEdit(cur)}},true);
+R.addEventListener('dblclick',e=>{
+ if(!R.classList.contains('on')||!cur||cur.ch||EDS||!EDK.includes(curK)||kindOf(cur)!=curK)return;
+ const row=e.target.closest&&e.target.closest('.tv > div');if(!row||!row.firstElementChild)return;
+ const line=parseInt(row.firstElementChild.textContent,10);if(!line)return;let col=0;
+ try{const sp=row.querySelector('span');let rg=null;if(document.caretRangeFromPoint)rg=document.caretRangeFromPoint(e.clientX,e.clientY);else if(document.caretPositionFromPoint){const cp=document.caretPositionFromPoint(e.clientX,e.clientY);if(cp){rg=document.createRange();rg.setStart(cp.offsetNode,cp.offset)}}
+  if(rg&&sp&&sp.contains(rg.startContainer)){const r2=document.createRange();r2.setStart(sp,0);r2.setEnd(rg.startContainer,rg.startOffset);col=r2.toString().length}}catch(x){}
+ startEdit(cur,{line,col})});
+
+/* --- plain-text / code editor inside the viewer --- */
+async function textEdit(f,pos){
+ const my=++tok;let buf;try{buf=await(await rdBlob(f,'text/plain')).arrayBuffer()}catch(e){toast('Could not open this file');return}
+ if(my!=tok)return;
+ const u8=new Uint8Array(buf,0,Math.min(4,buf.byteLength)),encName=encOf(u8,buf);let raw=dec(buf);const eol=eolOf(raw),t=raw.replace(/\r\n?/g,'\n');
+ freeCtl();const B=q('#rbd'),tb=q('#rtb');B.style.cssText='';B.scrollTop=0;
+ B.innerHTML='<div class="edw"><textarea id="edta" spellcheck="false" autocapitalize="off" autocorrect="off" autocomplete="off"></textarea></div>';
+ const ta=q('#edta');ta.value=t;ta.classList.toggle('wr',!!P.wrap);ta.wrap=P.wrap?'soft':'off';let dirty=false;
+ tb.onclick=null;tb.innerHTML='<button class="chip on" data-e="sv">💾 Save</button><button class="chip" data-e="cn">✕ Cancel</button><button class="chip" data-e="fm">A−</button><button class="chip" data-e="fp">A＋</button><button class="chip'+(P.wrap?' on':'')+'" data-e="wr">↵ Wrap</button><span class="sp"></span><span class="edst" id="edst"></span>';
+ const st=()=>{const s=ta.selectionStart||0,b=ta.value.slice(0,s),ln=b.split('\n').length,cl=s-b.lastIndexOf('\n');const e=q('#edst');if(e)e.textContent='Ln '+ln+', Col '+cl+(dirty?' • unsaved':'')};
+ const save=async()=>{const b=q('[data-e="sv"]');try{if(b)b.disabled=true;await saveText(f,toEolS(ta.value,eol),encName);dirty=false;EDS=null;openV(f.id,true)}catch(e){toast('Could not save');if(b)b.disabled=false}};
+ const cancel=()=>{if(dirty&&!confirm('Discard your changes?'))return;dirty=false;EDS=null;openV(f.id,true)};
+ tb.onclick=ev=>{const b=ev.target.closest('[data-e]');if(!b)return;const a=b.dataset.e;
+  if(a=='sv')save();else if(a=='cn')cancel();
+  else if(a=='fm'||a=='fp'){P.fs=Math.max(11,Math.min(30,P.fs+(a=='fp'?1:-1)));sv();R.style.setProperty('--rfs',P.fs+'px')}
+  else if(a=='wr'){P.wrap=P.wrap?0:1;sv();b.classList.toggle('on',!!P.wrap);ta.classList.toggle('wr',!!P.wrap);ta.wrap=P.wrap?'soft':'off'}};
+ ta.addEventListener('input',()=>{dirty=true;st()});['keyup','click','select','touchend'].forEach(n=>ta.addEventListener(n,()=>setTimeout(st,0)));
+ ta.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&(e.key=='s'||e.key=='S')){e.preventDefault();e.stopPropagation();save()}else if(e.key=='Escape'){e.stopPropagation();cancel()}});
+ EDS={dirty:()=>dirty};
+ let at=0;if(pos&&pos.line){const ls=t.split('\n');if(pos.line<=ls.length){for(let i=0;i<pos.line-1;i++)at+=ls[i].length+1;at+=Math.min(pos.col||0,ls[pos.line-1].length)}}
+ setTimeout(()=>{try{ta.focus({preventScroll:true});ta.setSelectionRange(at,at);const lh=parseFloat(getComputedStyle(ta).lineHeight)||22,ln=t.slice(0,at).split('\n').length-1;ta.scrollTop=Math.max(0,ln*lh-ta.clientHeight/3)}catch(e){}st()},30)}
+
+/* --- .docx editor: edits paragraph text, keeps pictures / tables / layout --- */
+async function docxEdit(f){
+ const my=++tok;let z,xs;
+ try{const buf=await(await rdBlob(f,fmime(f))).arrayBuffer();z=await unzip(buf);xs=await z.get('word/document.xml');if(!xs)throw 0}catch(e){toast('Could not open this document for editing');return}
+ if(my!=tok)return;
+ const W='http://schemas.openxmlformats.org/wordprocessingml/2006/main',XN='http://www.w3.org/XML/1998/namespace';
+ const dx=new DOMParser().parseFromString(xs,'application/xml');if(dx.getElementsByTagName('parsererror').length){toast('Could not read this document');return}
+ const body=dx.getElementsByTagNameNS(W,'body')[0];if(!body){toast('Could not read this document');return}
+ const kid=(n,l)=>[...n.childNodes].find(c=>c.nodeType==1&&c.localName==l);
+ const paras=[...body.getElementsByTagNameNS(W,'p')].filter(p=>{for(let n=p.parentNode;n&&n!==body;n=n.parentNode)if(n.localName=='txbxContent')return false;return true});
+ const LOCKS=new Set(['drawing','pict','object','fldChar','fldSimple','sym','footnoteReference','endnoteReference','commentReference','ptab']);
+ const ptext=p=>{let s='';const walk=n=>{for(const c of n.childNodes){if(c.nodeType!=1)continue;const l=c.localName;
+   if(l=='t')s+=c.textContent;else if(l=='tab')s+='\t';else if(l=='br'||l=='cr'){if(c.getAttributeNS(W,'type')!='page')s+='\n'}else if(l=='noBreakHyphen')s+='-';
+   else if(l=='pPr'||l=='rPr'||l=='delText'||l=='instrText'||l=='txbxContent'||l=='softHyphen')continue;else walk(c)}};walk(p);return s};
+ const locked=p=>{for(const e of p.getElementsByTagName('*')){if(LOCKS.has(e.localName))return true;if(e.localName=='br'&&e.getAttributeNS(W,'type')=='page')return true}return false};
+ const inTbl=p=>{for(let n=p.parentNode;n&&n!==body;n=n.parentNode)if(n.localName=='tc')return true;return false};
+ const items=paras.map(p=>{const ppr=kid(p,'pPr'),ps=ppr&&kid(ppr,'pStyle'),sty=ps?(ps.getAttributeNS(W,'val')||''):'';const tx=ptext(p);return{p,orig:tx,text:tx,lock:locked(p),h:/^(Heading|Title|heading|title)/.test(sty),tbl:inTbl(p)}});
+ if(!items.length){toast('This document has no text to edit');return}
+ freeCtl();const B=q('#rbd'),tb=q('#rtb');B.style.cssText='';B.scrollTop=0;
+ B.innerHTML='<div class="dxw"><div class="dxn">✎ Editing the text. Pictures, tables and layout stay as they are. Greyed lines (pictures / fields) can\'t be edited here. Press Enter for a new paragraph.</div><div class="dxp" id="dxl"></div></div>';
+ tb.onclick=null;tb.innerHTML='<button class="chip on" data-e="sv">💾 Save</button><button class="chip" data-e="cn">✕ Cancel</button><span class="sp"></span><span class="edst" id="edst"></span>';
+ const L=q('#dxl');let dirty=false;const gone=[];
+ const grow=t=>{t.style.height='auto';t.style.height=(t.scrollHeight+2)+'px'};
+ const mkRow=(it,after)=>{const t=document.createElement('textarea');t.rows=1;t.value=it.text;t.spellcheck=false;t.setAttribute('autocapitalize','off');t.setAttribute('autocorrect','off');if(it.h)t.classList.add('h');if(it.tbl)t.classList.add('itb');if(it.lock){t.readOnly=true;t.title='Has a picture or field — cannot be edited here'}t._it=it;it.t=t;
+  t.addEventListener('input',()=>{it.text=t.value;grow(t);dirty=true;const e=q('#edst');if(e)e.textContent='unsaved'});
+  t.addEventListener('keydown',e=>{
+   if((e.ctrlKey||e.metaKey)&&(e.key=='s'||e.key=='S')){e.preventDefault();e.stopPropagation();save();return}
+   if(e.key=='Escape'){e.stopPropagation();cancel();return}
+   if(it.lock)return;
+   if(e.key=='Enter'&&!e.shiftKey&&!e.ctrlKey&&!e.altKey&&!e.isComposing){e.preventDefault();const s=t.selectionStart,en2=t.selectionEnd,before=t.value.slice(0,s),aft=t.value.slice(en2);t.value=before;it.text=before;grow(t);
+    const n={p:null,orig:'',text:aft,lock:false,h:false,tbl:it.tbl};const r=mkRow(n,t);r.focus();r.setSelectionRange(0,0);dirty=true;return}
+   if(e.key=='Backspace'&&t.selectionStart==0&&t.selectionEnd==0){const pv=t.previousElementSibling;if(pv&&pv._it&&!pv._it.lock){e.preventDefault();const pl=pv.value.length;pv.value+=t.value;pv._it.text=pv.value;grow(pv);if(it.p)gone.push(it);t.remove();pv.focus();pv.setSelectionRange(pl,pl);dirty=true}}});
+  if(after)after.after(t);else L.appendChild(t);return t};
+ items.forEach(it=>mkRow(it));[...L.children].forEach(grow);
+ setTimeout(()=>{[...L.children].forEach(grow)},120);
+ const rowItems=()=>[...L.children].map(t=>t._it);
+ /* write the new text of a paragraph, keeping its first run's font settings */
+ const setText=(p,text)=>{const runs=[...p.getElementsByTagNameNS(W,'r')];let rpr=null;
+  for(const r of runs){const x=kid(r,'rPr');if(x&&r.getElementsByTagNameNS(W,'t').length){rpr=x.cloneNode(true);break}}
+  if(!rpr&&runs[0]){const x=kid(runs[0],'rPr');if(x)rpr=x.cloneNode(true)}
+  for(const c of [...p.childNodes]){const l=c.localName;if(l=='pPr'||l=='bookmarkStart'||l=='bookmarkEnd')continue;p.removeChild(c)}
+  if(!text)return;let r=dx.createElementNS(W,'w:r');if(rpr)r.appendChild(rpr.cloneNode(true));let bf='';
+  const flush=()=>{if(bf){const t=dx.createElementNS(W,'w:t');t.setAttributeNS(XN,'xml:space','preserve');t.textContent=bf;r.appendChild(t);bf=''}};
+  for(const ch of text){if(ch=='\n'){flush();r.appendChild(dx.createElementNS(W,'w:br'))}else if(ch=='\t'){flush();r.appendChild(dx.createElementNS(W,'w:tab'))}else bf+=ch}
+  flush();p.appendChild(r)};
+ const newP=ref=>{const p=dx.createElementNS(W,'w:p'),ppr=ref&&kid(ref,'pPr');if(ppr){const c=ppr.cloneNode(true);for(const s of [...c.childNodes])if(s.localName=='sectPr')c.removeChild(s);p.appendChild(c)}return p};
+ const save=async()=>{const b=q('[data-e="sv"]');try{if(b)b.disabled=true;
+   let last=null;
+   for(const it of rowItems()){
+    if(it.p){if(!it.lock&&it.text!==it.orig)setText(it.p,it.text);last=it.p}
+    else{const p=newP(last);setText(p,it.text);
+     if(last&&last.parentNode)last.parentNode.insertBefore(p,last.nextSibling);else body.insertBefore(p,body.firstChild);it.p=p;last=p}}
+   for(const it of gone){const p=it.p;if(!p||!p.parentNode)continue;const par=p.parentNode;if(par.localName=='tc'&&[...par.childNodes].filter(c=>c.localName=='p').length<=1)setText(p,'');else par.removeChild(p)}
+   let xml=new XMLSerializer().serializeToString(dx);if(!/^<\?xml/.test(xml))xml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n'+xml;
+   const out=await zipBuild(z,{'word/document.xml':te8.encode(xml)});
+   await commitFile(f,out);toast('Saved ✓');dirty=false;EDS=null;openV(f.id,true)}
+  catch(e){console.error(e);toast('Could not save');if(b)b.disabled=false}};
+ const cancel=()=>{if(dirty&&!confirm('Discard your changes?'))return;dirty=false;EDS=null;openV(f.id,true)};
+ tb.onclick=ev=>{const b=ev.target.closest('[data-e]');if(!b)return;if(b.dataset.e=='sv')save();else cancel()};
+ EDS={dirty:()=>dirty}}
+
+function hide(){tok++;EDS=null;freeCtl();if(OFX.fsEl()===R)OFX.exitFS();R.classList.remove('pfs');document.documentElement.classList.remove('pfs-lock');setK(null);killPdf();XU.splice(0).forEach(u=>URL.revokeObjectURL(u));R.classList.remove('on');R.innerHTML='';if(url){URL.revokeObjectURL(url);url=null}cur=null}
+function closeV(noHist){if(!leaveOk())return;const had=history.state&&history.state.rdr;hide();if(had){try{history.back()}catch(e){}}}
+addEventListener('popstate',()=>{if(R.classList.contains('on')){if(!leaveOk()){try{history.pushState({rdr:1},'')}catch(e){}return}hide()}});
 addEventListener('keydown',e=>{if(!R.classList.contains('on')||$('#modal').style.display=='flex')return;
  if(e.key=='Escape'){if(R.classList.contains('pfs')){OFX.toggleFS(R)}else closeV()}else if(e.key=='ArrowRight'&&q('#rnx')&&!/INPUT|TEXTAREA/.test(document.activeElement.tagName))q('#rnx').click();else if(e.key=='ArrowLeft'&&q('#rpv')&&!/INPUT|TEXTAREA/.test(document.activeElement.tagName))q('#rpv').click()});
 /* locking the app also closes any open file */
