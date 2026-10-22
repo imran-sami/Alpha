@@ -4817,4 +4817,21 @@ try{const _i=V.ins;V.ins=function(){const r=_i.apply(this,arguments);try{if(view
 #main .fsh h3,#main .fsh .chip,#main .fsh button{white-space:nowrap}#main .fsh .chip,#main .fsh button{padding-left:12px;padding-right:12px}
 }
 </style>
+<style id="alpha-lock-open">/* ===== lock screen: no box, options aligned in one clean column. Visual layer only. ===== */
+html body #lock .card{max-width:380px!important;width:100%;padding:0!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html body #lock .card::before{display:none!important}
+html body #lock .lk-row,html body #lock .lk-rs{margin:12px 0 0!important;padding:0!important;border:0!important;text-align:left!important}
+html body #lock .lk-row{min-height:44px;gap:14px;font-size:13.5px}
+html body #lock .lk-rs{display:block}
+html body #lock #rs{display:flex!important;align-items:center;gap:14px;width:100%;min-height:44px;color:var(--lk-lav)!important;font-size:13.5px;line-height:1.35;text-align:left;
+--lk-tile:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a98bff' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12a9 9 0 1 1-3-6.7L21 8'/%3E%3Cpath d='M21 3v5h-5'/%3E%3C/svg%3E")}
+html body #lock #rs::before{width:44px;height:44px;flex:none;border-radius:15px;border:1.5px solid transparent;-webkit-mask:none;mask:none;
+background:var(--lk-tile) center/21px no-repeat padding-box,linear-gradient(160deg,rgba(18,22,70,.9),rgba(10,10,42,.9)) padding-box,linear-gradient(140deg,rgba(80,120,255,.55),rgba(150,70,255,.45)) border-box}
+html body #lock #rs::after{margin-left:auto}
+html[data-theme=light] body #lock #rs{--lk-tile:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b45e0' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12a9 9 0 1 1-3-6.7L21 8'/%3E%3Cpath d='M21 3v5h-5'/%3E%3C/svg%3E")}
+html[data-theme=light] body #lock #rs::before{background:var(--lk-tile) center/21px no-repeat padding-box,linear-gradient(160deg,#fff,#eef0ff) padding-box,linear-gradient(140deg,rgba(80,120,255,.55),rgba(150,70,255,.45)) border-box}
+html body #lock .lk-row .lk-q,html body #lock .lk-row .lk-l{display:block}html body #lock .lk-row .lk-l{margin-left:0;width:fit-content;margin-top:1px}
+html body #lock .lk-foot{margin-top:26px}
+@media(max-width:380px){html body #lock .card{padding:0!important;border-radius:0!important}html body #lock .lk-row,html body #lock #rs{font-size:12.5px;gap:10px}}
+</style>
 </body></html>

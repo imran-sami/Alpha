@@ -44,3 +44,8 @@ Goal: pages look like the reference pictures; app icon and all functionality unc
 - Fixed: Insights title wrapping next to banner (banner shrinks, hidden under 340px); Settings tab strip clipped with no hint (now fades + snaps); Vault slightly wider than screen at 320px; Vault header text squeezed by 112px reserved padding; long file names collapsing to one letter per line; "Files" heading / "Select items" wrapping
 - Visual layer only: <style id="alpha-mobile-fixes"> at the end of index.html
 - Service-worker cache bumped to v36
+
+## Lock screen: no box - DONE
+- Removed the rectangular glass card/border around the lock form; logo, fields, Unlock button, 3 option rows (Sign In, Recover, Reset) and footer now sit directly on the screen in one aligned column (mobile + PC)
+- Visual layer only: <style id="alpha-lock-open"> at the end of index.html. Handlers/ids/logic untouched
+- Service-worker cache bumped to v37
