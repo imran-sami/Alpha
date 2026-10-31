@@ -246,6 +246,9 @@ const _h=hist;hist=function(){_h();document.querySelectorAll('#main .item').forE
 let h24=ls.g('alpha.h24',false),cm=new Date(),cd=dk(Date.now());
 ['toLocaleTimeString','toLocaleString'].forEach(m=>{const o=Date.prototype[m];Date.prototype[m]=function(l,op){return o.call(this,l,Object.assign({hour12:!h24},op))}});
 const loc={tz:Intl.DateTimeFormat().resolvedOptions().timeZone||'',co:''};loc.city=(loc.tz.split('/').pop()||'Local').replace(/_/g,' ');
+try{const c=JSON.parse(localStorage.getItem('alpha.loc')||'null');if(c&&c.co)loc.co=c.co;if(c&&c.no)loc.no=1}catch(e){}
+/* location is read once, saved, and only used from the next launch - it never changes while the app is in use */
+loc.ask=function(){if(loc.asked)return;loc.asked=1;if(loc.co||loc.no)return;try{navigator.geolocation.getCurrentPosition(p=>{try{localStorage.setItem('alpha.loc',JSON.stringify({co:p.coords.latitude.toFixed(2)+'°, '+p.coords.longitude.toFixed(2)+'°'}))}catch(e){}},e=>{if(e&&e.code===1){try{localStorage.setItem('alpha.loc',JSON.stringify({no:1}))}catch(x){}}},{timeout:8000,maximumAge:864e5})}catch(e){}};
 const fl=document.createElement('link');fl.rel='stylesheet';fl.href='https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&family=Hind+Siliguri:wght@400;600;700&display=swap';document.head.appendChild(fl);
 const s4=document.createElement('style');s4.textContent=`html,body{height:100%;overflow:hidden;overscroll-behavior:none;scroll-behavior:smooth}
 body{font-family:'Plus Jakarta Sans','Hind Siliguri',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;letter-spacing:.1px}
@@ -267,8 +270,8 @@ nav button.on{background:linear-gradient(135deg,var(--a),var(--b));color:#fff}
 @media(min-width:800px){nav{position:relative;left:auto;right:auto;bottom:auto;height:auto;align-self:stretch;margin:14px 0 14px 14px;padding:26px 12px}}`;document.head.appendChild(s4);
 function ask(msg,ok){const o=document.createElement('div');o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:90;display:flex;align-items:center;justify-content:center;padding:20px';o.innerHTML=`<div class="card" style="background:var(--bg);max-width:340px;text-align:center"><p style="margin-bottom:16px">${msg}</p><div class="row" style="justify-content:center"><button class="btn ghost" id="an">Cancel</button><button class="btn stop" id="ay">Confirm</button></div></div>`;document.body.appendChild(o);o.querySelector('#an').onclick=()=>o.remove();o.querySelector('#ay').onclick=()=>{o.remove();ok()}}
 addEventListener('keydown',e=>{if(e.key=='Escape')shut()});
-function addClk(){const s=$('#main .sub');if(!s)return;s.insertAdjacentHTML('afterend','<div class="card" data-z="cal" style="margin-bottom:16px"><div class="big" id="ck" style="font-size:36px;font-variant-numeric:tabular-nums"></div><div class="mu" id="cdt"></div><div class="mu" id="lc"></div><div class="mu" style="margin-top:6px">📅 Tap to open calendar</div></div>');if(!loc.asked){loc.asked=1;try{navigator.geolocation.getCurrentPosition(p=>{loc.co=p.coords.latitude.toFixed(2)+'°, '+p.coords.longitude.toFixed(2)+'°'},()=>{},{timeout:8000})}catch(e){}}clk()}
-function clk(){const e=$('#ck');if(!e)return;const n=new Date();e.textContent=n.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});$('#cdt').textContent=n.toLocaleDateString([], {weekday:'long',day:'numeric',month:'long',year:'numeric'});$('#lc').textContent='📍 '+loc.city+(loc.co?' · '+loc.co:' · '+loc.tz)}setInterval(clk,1000);
+function addClk(){const s=$('#main .sub');if(!s)return;s.insertAdjacentHTML('afterend','<div class="card" data-z="cal" style="margin-bottom:16px"><div class="big" id="ck" style="font-size:36px;font-variant-numeric:tabular-nums"></div><div class="mu" id="cdt"></div><div class="mu" id="lc"></div><div class="mu" style="margin-top:6px">📅 Tap to open calendar</div></div>');loc.ask();clk()}
+function clk(){const e=$('#ck');if(!e)return;const n=new Date();e.textContent=n.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});const W=(el,t)=>{if(el&&el.dataset.raw!==t){el.dataset.raw=t;el.textContent=t}};W($('#cdt'),n.toLocaleDateString([], {weekday:'long',day:'numeric',month:'long',year:'numeric'}));W($('#lc'),'📍 '+loc.city+(loc.co?' · '+loc.co:' · '+loc.tz))}setInterval(clk,1000);
 V.cal=()=>cal();
 function cal(){view='cal';const y=cm.getFullYear(),m=cm.getMonth(),f=new Date(y,m,1).getDay(),n=new Date(y,m+1,0).getDate(),c=[];for(let i=0;i<f;i++)c.push('<span></span>');
 for(let d=1;d<=n;d++){const ds=new Date(y,m,d).toDateString(),a=all().some(x=>dk(x.s)==ds),t=tasks.some(x=>x.due&&dk(x.due)==ds);c.push(`<button class="cd ${cd==ds?'on':''}" data-day="${d}" style="${ds==dk(Date.now())?'outline:2px solid var(--b)':''}"><b>${d}</b><span>${a?'<i class="dt" style="background:var(--b)"></i>':''}${t?'<i class="dt" style="background:#f59e0b"></i>':''}</span></button>`)}
@@ -2493,7 +2496,8 @@ const _fl=fileP;fileP=async function(id){await _fl(id);const f=await gf(id);if(!
 (()=>{
 const CH=16*1024*1024;
 const mb=n=>n>=1e9?(n/1e9).toFixed(2)+' GB':(n/1e6).toFixed(n>=1e8?0:1)+' MB';
-const est=async()=>{try{return await navigator.storage.estimate()}catch(e){return null}};
+const QUOTA=100e9; /* ALPHA storage = 100 GB */
+const est=async()=>{let u=0;try{u=(await rows()).reduce((a,f)=>a+(f.id=='avatar'?0:(f.size||0)),0)}catch(e){}return{usage:u,quota:QUOTA}};
 const persist=async()=>{try{if(navigator.storage&&navigator.storage.persist){if(await navigator.storage.persisted())return true;return await navigator.storage.persist()}}catch(e){}return false};
 
 /* read any stored file (old single-block or new chunked) as a Blob */
@@ -2522,9 +2526,9 @@ const _ed=edP;edP=async function(f){if(f.ch){toast('This file is too large to ed
 /* storage meter on the Vault page */
 const _v=V.vault;V.vault=async function(){await _v();if(view!='vault')return;const sub=$('#main .sub');if(!sub)return;
  sub.insertAdjacentHTML('afterend',`<div class="card" id="stg" style="margin-bottom:16px"><h3>Storage</h3><div class="mu" id="stt">Checking…</div></div>`);
- const e=await est(),pr=await persist(),used=(await rows().catch(()=>[])).reduce((a,f)=>a+(f.size||0),0),box=$('#stg');if(!box)return;
+ const e=await est(),pr=await persist(),used=e.usage,box=$('#stg');if(!box)return;
  let h=`<div class="big" style="font-size:22px">${mb(used)} <span class="mu" style="font-size:14px;font-weight:600">in your vault</span></div>`;
- if(e&&e.quota){const free=Math.max(0,e.quota-e.usage),pc=Math.min(100,Math.round(e.usage/e.quota*100));h+=`<div style="height:8px;border-radius:8px;background:var(--bd);margin:10px 0 6px;overflow:hidden"><div style="height:100%;width:${Math.max(2,pc)}%;background:linear-gradient(90deg,var(--a),var(--b))"></div></div><div class="mu">${mb(free)} free on this device · browser allows up to ${mb(e.quota)}</div>`}
+ if(e&&e.quota){const free=Math.max(0,e.quota-e.usage),pc=Math.min(100,Math.round(e.usage/e.quota*100));h+=`<div style="height:8px;border-radius:8px;background:var(--bd);margin:10px 0 6px;overflow:hidden"><div style="height:100%;width:${Math.max(2,pc)}%;background:linear-gradient(90deg,var(--a),var(--b))"></div></div><div class="mu">${mb(free)} free of ${mb(e.quota)}</div>`}
  h+=`<div class="mu" style="margin-top:8px">${pr?'✓ Persistent storage on — the browser will not clear your files automatically.':'Persistent storage is off — the browser may clear files if the device runs low on space.'}</div>`;
  if(!pr)h+=`<button class="chip" id="stp" style="margin-top:10px">Keep my files safe (enable)</button>`;
  h+=`<div class="mu" style="margin-top:8px;font-size:12px">No file size limit. Files over 16 MB are encrypted in pieces so very large files work.</div>`;
@@ -2747,19 +2751,20 @@ const st=document.createElement('style');st.textContent=`
 `;document.head.appendChild(st);
 addClk=function(){const s=document.querySelector('#main .sub');if(!s)return;const q=Q[qi()];
  s.insertAdjacentHTML('afterend',`<div class="cmpw"><div class="card cmp" data-z="cal"><div class="ckr"><div id="ck"></div><div class="ci"><div class="mu" id="cdt"></div><div class="mu" id="lc"></div></div><span class="ic" title="Calendar">📅</span></div></div><div class="card cmp" data-z="quo"><div class="ckr"><span class="ic">💬</span><div class="ci"><div class="qx">“${qt(q)}”</div><div class="qa mu">— ${q[0]}</div></div></div></div></div>`);
- if(!loc.asked){loc.asked=1;try{navigator.geolocation.getCurrentPosition(p=>{loc.co=p.coords.latitude.toFixed(2)+'°, '+p.coords.longitude.toFixed(2)+'°'},()=>{},{timeout:8000})}catch(e){}}clk();fixD()};
+ loc.ask();clk();fixD()};
 })();
 
 </script>
 <script>
 /* ===== v26b: storage as premium diagrams (rings / treemap / bubbles / bars) + click for details ===== */
 (()=>{
-const TR={'Storage':'স্টোরেজ','Rings':'রিং','Treemap':'ট্রিম্যাপ','Bubbles':'বাবল','Bars':'বার','Largest files':'বড় ফাইলগুলো','Share of vault':'ভল্টের অংশ','Last added':'সর্বশেষ যোগ','Other site data':'অন্যান্য সাইট ডেটা','free of':'ফাঁকা, মোট','Open Trash':'ট্র্যাশ খুলুন','Device storage':'ডিভাইস স্টোরেজ','Tap any shape for details':'বিস্তারিত দেখতে যেকোনো আকারে ট্যাপ করুন','Average size':'গড় আকার','Largest file':'বৃহত্তম ফাইল','Vault is empty':'ভল্ট খালি'};
+const TR={'Storage':'স্টোরেজ','Rings':'রিং','Treemap':'ট্রিম্যাপ','Bubbles':'বাবল','Bars':'বার','Largest files':'বড় ফাইলগুলো','Share of vault':'ভল্টের অংশ','Last added':'সর্বশেষ যোগ','Other site data':'অন্যান্য সাইট ডেটা','free of':'ফাঁকা, মোট','Open Trash':'ট্র্যাশ খুলুন','Total storage':'মোট স্টোরেজ','Tap any shape for details':'বিস্তারিত দেখতে যেকোনো আকারে ট্যাপ করুন','Average size':'গড় আকার','Largest file':'বৃহত্তম ফাইল','Vault is empty':'ভল্ট খালি'};
 try{Object.assign(D,TR);for(const k in TR)if(!DK.includes(k))DK.push(k);DK.sort((a,b)=>b.length-a.length)}catch(e){}
 const COL={doc:['#7dd3fc','#2563eb'],txt:['#c4b5fd','#7c3aed'],pdf:['#fda4af','#e11d48'],img:['#6ee7b7','#059669'],aud:['#fde68a','#d97706'],vid:['#f9a8d4','#be185d'],ppt:['#fdba74','#ea580c'],code:['#67e8f9','#0891b2'],oth:['#cbd5e1','#475569'],trash:['#94a3b8','#334155']};
 const NAME={doc:'Documents',txt:'Text',pdf:'PDF',img:'Images',aud:'Audio',vid:'Video',ppt:'Presentations',code:'Codes',oth:'Other',trash:'Trash'};
 const ICON={doc:'📄',txt:'📝',pdf:'📕',img:'🖼',aud:'🎵',vid:'🎬',ppt:'📊',code:'💻',oth:'📦',trash:'🗑'};
 const mbf=n=>n>=1e9?(n/1e9).toFixed(2)+' GB':n>=1e6?(n/1e6).toFixed(n>=1e8?0:1)+' MB':n>=1e3?Math.round(n/1e3)+' KB':(n||0)+' B';
+const pctS=(u,q)=>{const p=q?u/q*100:0;return !u?'0%':p<0.01?'<0.01%':p<1?p.toFixed(2)+'%':p<10?p.toFixed(1)+'%':Math.round(p)+'%'};
 const H=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const st=document.createElement('style');st.textContent=`
 #stg2{margin-bottom:16px;overflow:hidden}
@@ -2793,10 +2798,10 @@ async function gather(){
  const add=(k,f)=>{const c=cats[k]||(cats[k]={k,v:0,n:0,files:[],ext:{},last:0});c.v+=f.size||0;c.n++;c.files.push(f);const e=(ext(f.name)||'file').toLowerCase();(c.ext[e]||(c.ext[e]={n:0,v:0})).n++;c.ext[e].v+=f.size||0;c.last=Math.max(c.last,f.added||f.id||0)};
  for(const f of all){if(f.id=='avatar')continue;add(f.trash?'trash':fcat(f),f)}
  const list=Object.values(cats).sort((a,b)=>b.v-a.v);
- let est=null;try{est=await navigator.storage.estimate()}catch(e){}
+ let est=null;
  let pr=false;try{pr=!!(navigator.storage&&navigator.storage.persisted&&await navigator.storage.persisted())}catch(e){}
  const vault=list.reduce((a,c)=>a+c.v,0),nfiles=list.reduce((a,c)=>a+c.n,0);
- return{list,cats,vault,nfiles,est,pr}}
+ est={usage:vault,quota:100e9};return{list,cats,vault,nfiles,est,pr}}
 /* ---- shapes ---- */
 const seg=(c,i)=>c; // placeholder
 function rings(d){
@@ -2806,7 +2811,7 @@ function rings(d){
  const q=d.est&&d.est.quota?Math.min(1,d.est.usage/d.est.quota):0,R2=88,C2=2*Math.PI*R2;
  const dev=d.est&&d.est.quota?`<circle cx="160" cy="120" r="${R2}" fill="none" stroke="var(--bd)" stroke-width="6" opacity=".6"/><circle class="sg arc" data-k="dev" role="button" aria-label="Device" cx="160" cy="120" r="${R2}" fill="none" stroke="url(#g-dev)" stroke-width="6" stroke-linecap="round" stroke-dasharray="${Math.max(2,q*C2)} ${C2}" transform="rotate(-90 160 120)" filter="url(#gl)"><title>Device · ${mbf(d.est.usage)} / ${mbf(d.est.quota)}</title></circle>`:'';
  const base=`<circle cx="160" cy="120" r="${R}" fill="none" stroke="var(--bd)" stroke-width="16" opacity=".35"/>`;
- return `<svg viewBox="0 0 320 240">${defs()}${dev}${base}${arcs}<text x="160" y="116" text-anchor="middle" font-size="17" font-weight="800" fill="var(--tx)">${mbf(d.vault)}</text><text x="160" y="133" text-anchor="middle" font-size="10.5" fill="var(--mu)">${d.nfiles} files</text></svg>`}
+ return `<svg viewBox="0 0 320 240">${defs()}${dev}${base}${arcs}<text x="160" y="116" text-anchor="middle" font-size="17" font-weight="800" fill="var(--tx)">${mbf(d.vault)}</text><text x="160" y="133" text-anchor="middle" font-size="10.5" fill="var(--mu)">${d.nfiles} files · of ${mbf(d.est.quota)}</text></svg>`}
 function treemap(d){
  const items=d.list.filter(c=>c.v>0||c.n>0),tot=d.vault||1,mn=tot*.06,out=[];
  const its=items.map(c=>({c,v:Math.max(c.v,mn)}));
@@ -2839,16 +2844,16 @@ function paint(){
  const vis=empty?`<svg viewBox="0 0 320 200">${defs()}<circle cx="160" cy="100" r="62" fill="none" stroke="var(--bd)" stroke-width="20" opacity=".5"/><text x="160" y="104" text-anchor="middle" font-size="13" fill="var(--mu)">Vault is empty</text></svg>`:VIEW=='tree'?treemap(d):VIEW=='bub'?bubbles(d):VIEW=='bars'?bars(d):rings(d);
  const lg=d.list.map(c=>`<button data-k="${c.k}"><i style="background:linear-gradient(135deg,${COL[c.k][0]},${COL[c.k][1]})"></i>${NAME[c.k]} · ${mbf(c.v)}</button>`).join('');
  box.innerHTML=`<div class="sh"><h3>Storage</h3><div class="vs">${[['rings','◔ Rings'],['tree','▦ Treemap'],['bub','◉ Bubbles'],['bars','▮ Bars']].map(([k,l])=>`<button class="chip ${VIEW==k?'on':''}" data-v="${k}">${l}</button>`).join('')}</div></div>
- <div class="mu" style="font-size:12px">${mbf(used)} in your vault · ${d.nfiles} files${est&&est.quota?` · ${mbf(Math.max(0,est.quota-est.usage))} free of ${mbf(est.quota)}`:''}</div>${vis}
- <div class="lg">${lg}${est&&est.quota?`<button data-k="dev"><i style="background:linear-gradient(90deg,var(--a),var(--b))"></i>Device storage</button>`:''}</div>
+ <div class="mu" style="font-size:12px">${mbf(used)} in your vault · ${d.nfiles} files${est&&est.quota?` · ${mbf(Math.max(0,est.quota-est.usage))} free of ${mbf(est.quota)} (${pctS(est.usage,est.quota)} used)`:''}</div>${vis}
+ <div class="lg">${lg}${est&&est.quota?`<button data-k="dev"><i style="background:linear-gradient(90deg,var(--a),var(--b))"></i>Total storage</button>`:''}</div>
  <div class="mu" style="font-size:11.5px;margin-top:8px">Tap any shape for details</div>`}
 function detail(k){
  const d=DATA;if(!d)return;const mc=document.getElementById('mc');
  if(k=='dev'){const e=d.est||{usage:0,quota:0},other=Math.max(0,e.usage-d.vault),free=Math.max(0,e.quota-e.usage),pc=e.quota?Math.min(100,e.usage/e.quota*100):0;
   const parts=[['Vault',d.vault,'g-dev'],['Other site data',other,'g-oth'],['Free',free,null]];
-  mc.innerHTML=`<div class="sdt" style="width:min(92vw,460px)"><div class="row sp"><b style="font-size:18px">📱 Device storage</b><button class="chip sm" id="mx">Close</button></div>
-  <svg viewBox="0 0 320 70" style="width:100%;margin-top:8px">${defs()}<rect x="10" y="22" width="300" height="22" rx="11" fill="var(--bd)" opacity=".5"/><clipPath id="dc"><rect x="10" y="22" width="300" height="22" rx="11"/></clipPath><g clip-path="url(#dc)"><rect x="10" y="22" width="${Math.max(2,d.vault/(e.quota||1)*300)}" height="22" fill="url(#g-dev)"/><rect x="${10+d.vault/(e.quota||1)*300}" y="22" width="${Math.max(0,other/(e.quota||1)*300)}" height="22" fill="url(#g-oth)"/></g><text x="10" y="14" font-size="11" fill="var(--mu)">${pc.toFixed(1)}% used</text></svg>
-  <div class="gr"><div><b>${mbf(d.vault)}</b><span>Vault</span></div><div><b>${mbf(other)}</b><span>Other site data</span></div><div><b>${mbf(free)}</b><span>Free</span></div><div><b>${mbf(e.quota)}</b><span>Browser allows</span></div></div>
+  mc.innerHTML=`<div class="sdt" style="width:min(92vw,460px)"><div class="row sp"><b style="font-size:18px">💾 Total storage</b><button class="chip sm" id="mx">Close</button></div>
+  <svg viewBox="0 0 320 70" style="width:100%;margin-top:8px">${defs()}<rect x="10" y="22" width="300" height="22" rx="11" fill="var(--bd)" opacity=".5"/><clipPath id="dc"><rect x="10" y="22" width="300" height="22" rx="11"/></clipPath><g clip-path="url(#dc)"><rect x="10" y="22" width="${Math.max(2,d.vault/(e.quota||1)*300)}" height="22" fill="url(#g-dev)"/><rect x="${10+d.vault/(e.quota||1)*300}" y="22" width="${Math.max(0,other/(e.quota||1)*300)}" height="22" fill="url(#g-oth)"/></g><text x="10" y="14" font-size="11" fill="var(--mu)">${pctS(e.usage,e.quota)} used</text></svg>
+  <div class="gr"><div><b>${mbf(d.vault)}</b><span>Vault</span></div><div><b>${mbf(free)}</b><span>Free</span></div><div><b>${mbf(e.quota)}</b><span>Total storage</span></div><div><b>${d.nfiles}</b><span>Files</span></div></div>
   <div class="mu" style="margin-top:6px">${d.pr?'✓ Persistent storage on — the browser will not clear your files automatically.':'Persistent storage is off — the browser may clear files if the device runs low on space.'}</div>${d.pr?'':'<button class="chip" id="stp2" style="margin-top:10px">Keep my files safe (enable)</button>'}</div>`;
   document.getElementById('mx').onclick=shut;const b=document.getElementById('stp2');if(b)b.onclick=async()=>{let ok=false;try{ok=await navigator.storage.persist()}catch(e){}toast(ok?'Persistent storage enabled':'Your browser did not allow it. Installing ALPHA to the home screen usually helps.');shut();V.vault()};
   document.getElementById('modal').style.display='flex';return}
@@ -4050,12 +4055,12 @@ const CI={
 };
 /* chart palette (richer than the app's plain one) */
 const PAL={doc:['#5eead4','#0f9d8a'],txt:['#b388ff','#6d28d9'],pdf:['#ff5c8a','#e0105e'],img:['#6ee7b7','#059669'],aud:['#fbbf24','#d97706'],vid:['#a78bfa','#4f46e5'],ppt:['#bef264','#65a30d'],code:['#67e8f9','#0891b2'],oth:['#cdd6ee','#6b7cab'],trash:['#94a3b8','#475569'],dev:['#22d3ee','#d946ef']};
-const NM={doc:'Documents',txt:'Text',pdf:'PDF',img:'Images',aud:'Audio',vid:'Video',ppt:'Presentations',code:'Codes',oth:'Other',trash:'Trash',dev:'Device storage'};
+const NM={doc:'Documents',txt:'Text',pdf:'PDF',img:'Images',aud:'Audio',vid:'Video',ppt:'Presentations',code:'Codes',oth:'Other',trash:'Trash',dev:'Free space'};
 const mbf=n=>n>=1e9?(n/1e9).toFixed(2)+' GB':n>=1e6?(n/1e6).toFixed(n>=1e8?0:1)+' MB':n>=1e3?Math.round(n/1e3)+' KB':(n||0)+' B';
 const grad=k=>`linear-gradient(135deg,${PAL[k][0]},${PAL[k][1]})`;
 window.__skV={CI,PAL,NM,G,SV,mbf,E,grad};
-let VIEW='rings';try{VIEW=localStorage.getItem('alpha.stv')||'rings'}catch(e){}
-if(!['rings','tree','bub','bars'].includes(VIEW))VIEW='rings';
+let VIEW='dial';try{VIEW=localStorage.getItem('alpha.stv')||'dial'}catch(e){}
+if(!['dial','hive','towers','stars'].includes(VIEW))VIEW='dial';
 
 function rowsData(d){
   const L=d.list.filter(c=>c.n>0||c.v>0),est=d.est&&d.est.quota?d.est:null;
@@ -4070,18 +4075,17 @@ function ringsSvg(d,R){
   const defs=Object.keys(PAL).map(k=>`<linearGradient id="vr-${k}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${PAL[k][0]}"/><stop offset="1" stop-color="${PAL[k][1]}"/></linearGradient>`).join('');
   const arcs=L.map((c,i)=>{const l=vs[i]/T*C,len=Math.max(1,l-gap),e=`<circle class="sg" data-k="${c.k}" cx="100" cy="100" r="${r}" fill="none" stroke="url(#vr-${c.k})" stroke-width="22" stroke-linecap="round" stroke-dasharray="${len} ${C}" stroke-dashoffset="${-o}" transform="rotate(-90 100 100)" filter="url(#vgl)"><title>${NM[c.k]} · ${mbf(c.v)}</title></circle>`;o+=l;return e}).join('');
   const q=est?Math.min(1,est.usage/est.quota):0,r2=94,C2=2*Math.PI*r2;
-  const outer=`<circle cx="100" cy="100" r="${r2}" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="3"/><circle class="sg" data-k="dev" cx="100" cy="100" r="${r2}" fill="none" stroke="url(#vr-dev)" stroke-width="3" stroke-linecap="round" stroke-dasharray="${Math.max(2,q*C2)} ${C2}" transform="rotate(-90 100 100)"><title>Device · ${est?mbf(est.usage)+' / '+mbf(est.quota):''}</title></circle><circle cx="100" cy="6" r="3.2" fill="#37e3ff" filter="url(#vgl)"/>`;
+  const outer=`<circle cx="100" cy="100" r="${r2}" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="3"/><circle class="sg" data-k="dev" cx="100" cy="100" r="${r2}" fill="none" stroke="url(#vr-dev)" stroke-width="3" stroke-linecap="round" stroke-dasharray="${Math.max(2,q*C2)} ${C2}" transform="rotate(-90 100 100)"><title>Storage · ${est?mbf(est.usage)+' / '+mbf(est.quota):''}</title></circle><circle cx="100" cy="6" r="3.2" fill="#37e3ff" filter="url(#vgl)"/>`;
   return `<svg viewBox="0 0 200 200"><defs>${defs}<filter id="vgl" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>${outer}<circle cx="100" cy="100" r="${r}" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="22"/>${arcs}</svg><div class="rc"><span class="rdb">${G.db}</span><b>${mbf(d.vault)}</b><span>${d.nfiles} ${d.nfiles==1?'file':'files'}</span></div>`;
 }
 /* ---- storage list + legend ---- */
 function listHtml(d,R){
   const rows=R.L.map(c=>`<div class="vr" data-k="${c.k}"><i class="dt" style="background:${grad(c.k)}"></i><span class="n">${NM[c.k]}</span><span class="s">${mbf(c.v)}</span><span class="p">${R.pc(c)}%</span></div>`);
-  if(R.est)rows.push(`<div class="vr" data-k="dev"><i class="dt" style="background:${grad('dev')}"></i><span class="n">Device storage</span><span class="s">—</span><span class="p">${R.dev.pct}%</span></div>`);
-  return rows.join('');
+    return rows.join('');
 }
 function legendHtml(d,R){
   const p=R.L.map(c=>`<button data-k="${c.k}"><i style="background:${grad(c.k)}"></i>${NM[c.k]} · ${mbf(c.v)}</button>`);
-  if(R.est)p.push(`<button data-k="dev"><i style="background:${grad('dev')}"></i>Device storage</button>`);
+  if(R.est)p.push(`<button data-k="dev"><i style="background:${grad('dev')}"></i>Free space</button>`);
   return p.join('');
 }
 /* ---- treemap (cards row) ---- */
@@ -4109,15 +4113,81 @@ function bubblesHtml(d,R){
 function barsHtml(d,R){
   const rows=R.L.filter(c=>c.n>0).map(c=>{const w=Math.max(3,d.vault?c.v/d.vault*100:0);
    return `<div class="br" data-k="${c.k}"><span class="bg" style="background:${grad(c.k)}">${CI[c.k]||CI.oth}</span><div class="bm"><div class="bt"><b>${NM[c.k]}</b><span>${mbf(c.v)}</span><span>${R.pc(c)}%</span></div><div class="bk"><i style="width:${w}%;background:${grad(c.k)};box-shadow:0 0 10px ${PAL[c.k][0]}88"></i></div></div></div>`});
-  if(R.est)rows.push(`<div class="br" data-k="dev"><span class="bg dev" style="background:${grad('dev')}">${G.vdev}</span><div class="bm"><div class="bt"><b>Device storage</b><span>—</span><span>${R.dev.pct}%</span></div></div></div>`);
+  if(R.est)rows.push(`<div class="br" data-k="dev"><span class="bg dev" style="background:${grad('dev')}">${G.vdev}</span><div class="bm"><div class="bt"><b>Free space</b><span>—</span><span>${R.dev.pct}%</span></div></div></div>`);
   return rows.join('')||'<div class="vempty">Vault is empty</div>';
 }
-/* ---- left visual of the main storage card (follows the Rings/Treemap/Bubbles/Bars switch) ---- */
+/* ---- signature diagrams: Dial / Hive / Towers / Stars (all 240x150) ---- */
+const NG=k=>`url(#vn-${k})`;
+const defsN=()=>'<defs>'+Object.keys(PAL).map(k=>`<linearGradient id="vn-${k}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${PAL[k][0]}"/><stop offset="1" stop-color="${PAL[k][1]}"/></linearGradient>`).join('')+'<radialGradient id="vn-halo"><stop offset="0" stop-color="#37e3ff" stop-opacity=".55"/><stop offset="1" stop-color="#37e3ff" stop-opacity="0"/></radialGradient></defs>';
+const pctN=(u,q)=>{const p=q?u/q*100:0;return !u?'0%':p<0.01?'<0.01%':p<1?p.toFixed(2)+'%':p<10?p.toFixed(1)+'%':Math.round(p)+'%'};
+const QN=R=>R.est?R.est.quota:100e9;
+const qS=R=>mbf(QN(R)).replace('.00','');
+const T1='style="text-anchor:start;font-size:13px"',T1E='style="text-anchor:end;font-size:13px"';
+const corner=(d,R)=>`<text x="0" y="11" class="vn-t1" ${T1}>${mbf(d.vault)}</text><text x="0" y="23" class="vn-t2" style="text-anchor:start">${d.nfiles} ${d.nfiles==1?'file':'files'}</text><text x="240" y="11" class="vn-t1" ${T1E}>${pctN(d.vault,QN(R))}</text><text x="240" y="23" class="vn-t2" style="text-anchor:end">of ${qS(R)}</text>`;
+const tip=c=>`<title>${NM[c.k]} · ${mbf(c.v)}</title>`;
+const pol=(cx,cy,r,a)=>{const t=(a-90)*Math.PI/180;return[cx+r*Math.cos(t),cy+r*Math.sin(t)]};
+const arcP=(cx,cy,r,a0,a1)=>{const[x0,y0]=pol(cx,cy,r,a0),[x1,y1]=pol(cx,cy,r,a1);return `M${x0.toFixed(2)} ${y0.toFixed(2)}A${r} ${r} 0 ${a1-a0>180?1:0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`};
+const svgW=b=>`<svg viewBox="0 0 240 150">${defsN()}${b}</svg>`;
+
+/* 1 - DIAL: a vault door. Ticking bezel, category arcs on the lock ring, spoked wheel + keyhole */
+function vizDial(d,R){
+  const L=R.L,n=L.length,cx=120,cy=80;
+  let tk='';for(let i=0;i<72;i++){const big=i%6==0,a=i*5,[x0,y0]=pol(cx,cy,big?59:62,a),[x1,y1]=pol(cx,cy,66,a);tk+=`<path d="M${x0.toFixed(1)} ${y0.toFixed(1)}L${x1.toFixed(1)} ${y1.toFixed(1)}" stroke="var(--${big?'mu':'bd'})" stroke-width="${big?1.4:1}" stroke-linecap="round"/>`}
+  let sp='';for(let i=0;i<6;i++){const a=i*60,[x0,y0]=pol(cx,cy,26,a),[x1,y1]=pol(cx,cy,37,a);sp+=`<path d="M${x0.toFixed(1)} ${y0.toFixed(1)}L${x1.toFixed(1)} ${y1.toFixed(1)}" stroke="${NG('dev')}" stroke-width="3.4" stroke-linecap="round"/><circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="3.3" fill="${NG('dev')}"/>`}
+  const key=`<circle cx="${cx}" cy="${cy-3}" r="4.6" fill="${NG('dev')}"/><path d="M${cx-2.4} ${cy-1}L${cx+2.4} ${cy-1}L${cx+4.2} ${cy+9}L${cx-4.2} ${cy+9}Z" fill="${NG('dev')}"/>`;
+  const frame=`<circle cx="${cx}" cy="${cy}" r="69" fill="none" stroke="var(--bd)" stroke-width="1.4"/><g class="vn-spin" style="transform-origin:${cx}px ${cy}px">${tk}</g><circle cx="${cx}" cy="${cy}" r="43" fill="none" stroke="var(--bd)"/><path d="M${cx-5} 1L${cx+5} 1L${cx} 9Z" fill="${NG('dev')}"/>`;
+  const knob=`<g class="vn-spin2" style="transform-origin:${cx}px ${cy}px">${sp}</g><circle cx="${cx}" cy="${cy}" r="26" fill="var(--card)" stroke="var(--bd)" stroke-width="1.2"/>${key}`;
+  if(!d.nfiles)return svgW(`${corner(d,R)}${frame}<circle cx="${cx}" cy="${cy}" r="50" fill="none" stroke="var(--bd)" stroke-width="7"/>${knob}`);
+  const gap=n>1?3:0,vs=L.map(c=>Math.max(d.vault?c.v/d.vault:0,.045)),T=vs.reduce((a,b)=>a+b,0)||1,use=360-gap*n;let a=0;
+  const arcs=L.map((c,i)=>{const span=vs[i]/T*use,cap=span>10?4:Math.max(0,span/2-.4),a0=a+gap/2+cap,a1=Math.max(a0+.4,a+span+gap/2-cap);a+=span+gap;
+   return `<g class="sg" data-k="${c.k}"><path d="${arcP(cx,cy,50,a0,n==1?a0+359.4:a1)}" fill="none" stroke="transparent" stroke-width="16"/><path class="vn-arc" d="${arcP(cx,cy,50,a0,n==1?a0+359.4:a1)}" fill="none" stroke="${NG(c.k)}" stroke-width="7" stroke-linecap="round"/>${tip(c)}</g>`}).join('');
+  return svgW(`${corner(d,R)}${frame}${arcs}${knob}`);
+}
+
+/* 2 - HIVE: honeycomb of 61 cells, each file type owns a spiral of cells (largest at the core) */
+function vizHive(d,R){
+  const s=11,cx=120,cy=84,L=R.L.slice().sort((a,b)=>b.v-a.v),N=61,RG=4;
+  const cells=[];for(let q=-RG;q<=RG;q++)for(let r=-RG;r<=RG;r++){if(Math.abs(q+r)>RG)continue;const x=cx+s*Math.sqrt(3)*(q+r/2),y=cy+s*1.5*r;cells.push({x,y,ring:Math.max(Math.abs(q),Math.abs(r),Math.abs(q+r)),ang:(Math.atan2(y-cy,x-cx)+Math.PI/2+2*Math.PI)%(2*Math.PI)})}
+  cells.sort((a,b)=>a.ring-b.ring||a.ang-b.ang);
+  const hex=(x,y,rr)=>{let p='';for(let k=0;k<6;k++){const t=(60*k-30)*Math.PI/180;p+=(k?' ':'')+(x+rr*Math.cos(t)).toFixed(1)+','+(y+rr*Math.sin(t)).toFixed(1)}return p};
+  if(!d.nfiles)return svgW(`${corner(d,R)}`+cells.filter(c=>c.ring<=1).map(c=>`<polygon points="${hex(c.x,c.y,s-2.2)}" fill="none" stroke="var(--bd)" stroke-width="1.4" stroke-linejoin="round"/>`).join(''));
+  const n=L.length,tot=d.vault||1,raw=L.map(c=>c.v/tot*(N-n)),cnt=raw.map(v=>1+Math.floor(v));let left=N-cnt.reduce((a,b)=>a+b,0);
+  raw.map((v,i)=>[v-Math.floor(v),i]).sort((a,b)=>b[0]-a[0]).forEach(([,i])=>{if(left>0){cnt[i]++;left--}});
+  let idx=0;const g=L.map((c,i)=>{let h='';for(let j=0;j<cnt[i]&&idx<N;j++,idx++){const e=cells[idx];h+=`<polygon class="vn-pop" style="animation-delay:${idx*14}ms" points="${hex(e.x,e.y,s-2.4)}" fill="${NG(c.k)}" stroke="${NG(c.k)}" stroke-width="2.4" stroke-linejoin="round"/>`}
+   return `<g class="sg" data-k="${c.k}">${h}${tip(c)}</g>`}).join('');
+  return svgW(`${corner(d,R)}${g}`);
+}
+
+/* 3 - TOWERS: isometric skyline, one glass tower per file type, height = size */
+function vizTowers(d,R){
+  const L=R.L.slice().sort((a,b)=>b.v-a.v),n=L.length||1,Y=116,mx=Math.max(1,...L.map(c=>c.v));
+  const step=Math.min(28,224/n),w=Math.min(12.5,step*.46),dd=w*.55,x0=(240-n*step)/2+step/2;
+  const floor=`<path d="M${(x0-step*.7).toFixed(1)} ${Y+dd+5}L${(x0+(n-1)*step+step*.7).toFixed(1)} ${Y+dd+5}" stroke="var(--bd)" stroke-width="1.4" stroke-linecap="round"/>`;
+  if(!d.nfiles)return svgW(`${corner(d,R)}${floor}`);
+  const t=L.map((c,i)=>{const cx=x0+i*step,h=10+Math.sqrt(c.v/mx)*64,yt=Y-h,P=a=>a.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' '),
+   left=[[cx-w,yt],[cx,yt+dd],[cx,Y+dd],[cx-w,Y]],right=[[cx,yt+dd],[cx+w,yt],[cx+w,Y],[cx,Y+dd]],top=[[cx,yt-dd],[cx+w,yt],[cx,yt+dd],[cx-w,yt]],
+   p=d.vault?c.v/d.vault*100:0,lb=step>=19?`<text x="${cx.toFixed(1)}" y="${(yt-dd-4).toFixed(1)}" class="vn-t2" style="text-anchor:middle;font-size:8px">${p<1?'<1':Math.round(p)}%</text>`:'';
+   let win='';if(h>26)for(let y=yt+dd+6;y<Y-3;y+=7)win+=`<path d="M${(cx+2.5).toFixed(1)} ${(y).toFixed(1)}L${(cx+w-2.5).toFixed(1)} ${(y-dd+1.4).toFixed(1)}" stroke="rgba(255,255,255,.4)" stroke-width="1.6" stroke-linecap="round"/>`;
+   return `<g class="sg" data-k="${c.k}"><g class="vn-grow" style="animation-delay:${i*70}ms"><polygon points="${P(left)}" fill="${NG(c.k)}"/><polygon points="${P(right)}" fill="${NG(c.k)}"/><polygon points="${P(right)}" fill="rgba(0,0,0,.3)"/>${win}<polygon points="${P(top)}" fill="${NG(c.k)}"/><polygon points="${P(top)}" fill="rgba(255,255,255,.4)"/></g>${lb}${tip(c)}</g>`}).join('');
+  return svgW(`${corner(d,R)}${floor}${t}`);
+}
+
+/* 4 - STARS: a constellation; the vault is the sun, every file type is a star sized by its share */
+function vizStars(d,R){
+  const L=R.L.slice().sort((a,b)=>b.v-a.v),cx=120,cy=84,mx=Math.max(1,...L.map(c=>c.v));
+  const sun=`<circle class="vn-pulse" cx="${cx}" cy="${cy}" r="20" fill="url(#vn-halo)" style="transform-origin:${cx}px ${cy}px"/><circle cx="${cx}" cy="${cy}" r="9" fill="none" stroke="${NG('dev')}" stroke-width="1.4"/><circle cx="${cx}" cy="${cy}" r="4.2" fill="${NG('dev')}"/>`;
+  if(!d.nfiles)return svgW(`${corner(d,R)}<circle cx="${cx}" cy="${cy}" r="42" fill="none" stroke="var(--bd)" stroke-dasharray="2 5" stroke-linecap="round"/>${sun}`);
+  const P=L.map((c,i)=>{const rr=4.5+Math.sqrt(c.v/mx)*12,a=i*137.508*Math.PI/180,rad=(i?34:0)+13*Math.sqrt(i)*1.6;return{c,r:rr,x:cx+Math.cos(a)*rad*1.45+(i?0:30),y:cy+Math.sin(a)*rad*.85}});
+  for(let it=0;it<60;it++){for(let i=0;i<P.length;i++){const p=P[i];let dx=p.x-cx,dy=p.y-cy,dl=Math.hypot(dx,dy)||1,mn=p.r+14;if(dl<mn){p.x=cx+dx/dl*mn;p.y=cy+dy/dl*mn}
+   for(let j=i+1;j<P.length;j++){const q=P[j],ex=q.x-p.x,ey=q.y-p.y,el=Math.hypot(ex,ey)||.1,need=p.r+q.r+5;if(el<need){const k=(need-el)/2/el;p.x-=ex*k;p.y-=ey*k;q.x+=ex*k;q.y+=ey*k}}
+   p.x=Math.max(p.r+3,Math.min(237-p.r,p.x));p.y=Math.max(30+p.r,Math.min(147-p.r,p.y))}}
+  const lines=P.map(p=>`<path d="M${cx} ${cy}L${p.x.toFixed(1)} ${p.y.toFixed(1)}" stroke="${PAL[p.c.k][0]}" stroke-opacity=".38" stroke-width="1" stroke-dasharray="1.5 3.5" stroke-linecap="round"/>`).join('');
+  const nodes=P.map((p,i)=>{const col=PAL[p.c.k][0];return `<g class="sg" data-k="${p.c.k}"><circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${(p.r+14).toFixed(1)}" fill="transparent"/><circle class="vn-twk" style="animation-delay:${(i*.45).toFixed(2)}s;transform-origin:${p.x.toFixed(1)}px ${p.y.toFixed(1)}px" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${(p.r+4.5).toFixed(1)}" fill="${col}" fill-opacity=".18"/><circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${p.r.toFixed(1)}" fill="${NG(p.c.k)}"/><circle cx="${(p.x-p.r*.3).toFixed(1)}" cy="${(p.y-p.r*.3).toFixed(1)}" r="${(p.r*.28).toFixed(1)}" fill="#fff" fill-opacity=".55"/>${tip(p.c)}</g>`}).join('');
+  return svgW(`${corner(d,R)}${lines}${sun}${nodes}`);
+}
 function mainViz(d,R){
-  const S=window.__skStg;
-  if(VIEW==='rings'||!S||!d.nfiles)return `<div class="vviz rings">${ringsSvg(d,R)}</div>`;
-  const svg=VIEW==='tree'?S.treemap(d):VIEW==='bub'?S.bubbles(d):S.bars(d);
-  return `<div class="vviz alt">${svg}</div>`;
+  const f=VIEW==='hive'?vizHive:VIEW==='towers'?vizTowers:VIEW==='stars'?vizStars:vizDial;
+  return `<div class="vviz">${f(d,R)}</div>`;
 }
 
 async function skinVault(){
@@ -4133,16 +4203,13 @@ async function skinVault(){
 
   const root=document.createElement('div');root.className='vt';
   root.innerHTML=`<header class="vh"><div class="vic">${G.shield}</div><div class="vtt"></div><div class="vtools"><div class="vsearch">${G.search}<input id="vq" type="search" placeholder="Search files…" autocomplete="off" aria-label="Search files"></div></div></header>
-  <section class="vA"><div class="vcard vstor" style="--b1:#2fd4ff;--b2:#4b5bff"><div class="vsh"><div><h3>Storage</h3><div class="vsub" id="vsub"></div></div><div class="vs" id="vs"></div></div><div class="vbody"><div id="vvz"></div><div class="vlist" id="vlist"></div></div><div class="vlg" id="vlg"></div></div>
+  <section class="vA"><div class="vcard vstor" style="--b1:#2fd4ff;--b2:#4b5bff"><div class="vsh"><div><h3>Storage</h3><div class="vsub" id="vsub"></div><div class="vbar"><i id="vbi"></i></div></div><div class="vs" id="vs"></div></div><div class="vbody"><div id="vvz"></div><div class="vlist" id="vlist"></div></div></div>
   <div class="vcard vquick" style="--b1:#9b6bff;--b2:#3f6bff"><h3>Quick overview</h3><div class="vq">
    <div class="qt q1"><span class="qi">${G.files}</span><b>${live}</b><span>Total files</span></div>
    <div class="qt q2"><span class="qi">${G.db}</span><b>${R.est?mbf(Math.max(0,R.est.quota-R.est.usage)):'—'}</b><span>Free space</span></div>
    <button class="qt q3" id="qtr"><span class="qi">${G.trash.replace('width="15" height="15"','width="24" height="24"')}</span><b>${trashN}</b><span>In trash</span></button>
    <button class="qt q4" id="qpr"><span class="qi">${G.prot}</span><b>${d.pr?'On':'Off'}</b><span>Persistent storage</span></button></div></div></section>
-  <section class="vB"><div class="vcard vtree" style="--b1:#4b7bff;--b2:#2fd4ff"><h3>Storage visualization <em>(Treemap)</em></h3><div class="vtm" id="vtm"></div></div>
-  <div class="vcard vbub" style="--b1:#2fd4ff;--b2:#4b5bff"><h3>Storage <em>(Bubbles)</em></h3><div class="vbb" id="vbb"></div></div>
-  <div class="vcard vbar" style="--b1:#2f9bff;--b2:#35e0d0"><h3>Storage analysis <em>(Bars)</em></h3><div class="vbr" id="vbr"></div></div></section>
-  <section class="vcard vcat" style="--b1:#8a63ff;--b2:#3f6bff"><div class="vch"><h3>File categories</h3><span class="mu">Tap any shape for details</span></div><div class="vtiles" id="vtiles"></div><div class="vnote">${G.info}<span>Tap any shape for details</span></div></section>`;
+  <section class="vcard vcat" style="--b1:#8a63ff;--b2:#3f6bff"><div class="vch"><h3>File categories</h3><span class="mu">Tap any shape for details</span></div><div class="vtiles" id="vtiles"></div></section>`;
   /* move the app's own nodes (they keep their handlers) */
   const ttl=root.querySelector('.vtt');ttl.append(h1,sub);
   if(sub.firstChild&&sub.firstChild.nodeType===3)sub.firstChild.nodeValue=sub.firstChild.nodeValue.replace(/^[^\p{L}\p{N}]+/u,'');
@@ -4156,16 +4223,13 @@ async function skinVault(){
 
   /* fill + wire */
   const paintStor=()=>{
-    root.querySelector('#vsub').textContent=`${mbf(d.vault)} in your vault · ${d.nfiles} ${d.nfiles==1?'file':'files'}${R.est?` · ${mbf(Math.max(0,R.est.quota-R.est.usage))} free of ${mbf(R.est.quota)}`:''}`;
-    root.querySelector('#vs').innerHTML=[['rings','Rings',G.rings],['tree','Treemap',G.tree],['bub','Bubbles',G.bub],['bars','Bars',G.bars]].map(([k,l,i])=>`<button class="vchip${VIEW==k?' on':''}" data-v="${k}">${i}${l}</button>`).join('');
+    root.querySelector('#vsub').textContent=`${mbf(d.vault)} used of ${R.est?mbf(R.est.quota):'—'} · ${d.nfiles} ${d.nfiles==1?'file':'files'}`;
+    root.querySelector('#vbi').style.width=(R.est&&d.vault?Math.max(.6,Math.min(100,d.vault/R.est.quota*100)):0)+'%';
+    root.querySelector('#vs').innerHTML=[['dial','Dial',SV('<circle cx="12" cy="12" r="8.5" stroke-width="1.5"/><circle cx="12" cy="12" r="3" stroke-width="1.5"/><path d="M12 3.5v2.5M12 18v2.5M3.5 12H6M18 12h2.5" stroke-width="1.6"/>',{s:13})],['hive','Hive',SV('<path d="M12 3.5 18.5 7.2v7.6L12 18.5 5.5 14.8V7.2z" stroke-width="1.6"/><path d="M12 11v7.5M12 11 5.5 7.2M12 11l6.5-3.8" stroke-width="1.2"/>',{s:13})],['towers','Towers',SV('<path d="M4 20V12l3-1.6 3 1.6v8M10 20V6l3.5-2 3.5 2v14M17 20v-8l3-1.6V20" stroke-width="1.5"/>',{s:13})],['stars','Stars',SV('<circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/><circle cx="5.5" cy="6.5" r="1.8" fill="currentColor" stroke="none"/><circle cx="18.5" cy="8" r="2.6" fill="currentColor" stroke="none"/><circle cx="15" cy="19" r="1.6" fill="currentColor" stroke="none"/><path d="M12 12 5.5 6.5M12 12l6.5-4M12 12l3 7" stroke-width="1" stroke-dasharray="1.5 2"/>',{s:13,w:1})]].map(([k,l,i])=>`<button class="vchip${VIEW==k?' on':''}" data-v="${k}">${i}${l}</button>`).join('');
     root.querySelector('#vvz').innerHTML=mainViz(d,R);
     root.querySelector('#vlist').innerHTML=listHtml(d,R);
-    root.querySelector('#vlg').innerHTML=legendHtml(d,R);
   };
   paintStor();
-  root.querySelector('#vtm').innerHTML=treemapHtml(d,R);
-  root.querySelector('#vbb').innerHTML=bubblesHtml(d,R);
-  root.querySelector('#vbr').innerHTML=barsHtml(d,R);
   root.addEventListener('click',e=>{
     const v=e.target.closest('[data-v]');
     if(v){VIEW=v.dataset.v;try{localStorage.setItem('alpha.stv',VIEW)}catch(x){}paintStor();return}
@@ -4833,5 +4897,92 @@ html[data-theme=light] body #lock #rs::before{background:var(--lk-tile) center/2
 html body #lock .lk-row .lk-q,html body #lock .lk-row .lk-l{display:block}html body #lock .lk-row .lk-l{margin-left:0;width:fit-content;margin-top:1px}
 html body #lock .lk-foot{margin-top:26px}
 @media(max-width:380px){html body #lock .card{padding:0!important;border-radius:0!important}html body #lock .lk-row,html body #lock #rs{font-size:12.5px;gap:10px}}
+</style>
+
+<style id="alpha-vault-minimal">/* ===== Vault: light & minimal storage area (visual only) ===== */
+html body #app>main#main:has(>.vt){background:none!important}
+html body #main .vt .vcard{background:var(--card)!important;border:1px solid var(--bd)!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;border-radius:18px;padding:22px 24px}
+html body #main .vt .vcard::before{display:none!important}
+html body #main .vt .vstor{height:auto;min-height:0}
+html body #main .vt .vcard h3{font-size:12px;letter-spacing:.09em;color:var(--mu)}
+html body #main .vt .vsub{color:var(--mu);font-size:12.5px;margin-top:4px}
+html body #main .vt .vbar{height:4px;border-radius:4px;background:var(--bd);margin-top:10px;width:min(100%,340px);overflow:hidden}
+html body #main .vt .vbar i{display:block;height:100%;border-radius:inherit;background:var(--a);transition:width .4s}
+html body #main .vt .vchip{background:transparent!important;border:1px solid transparent!important;box-shadow:none!important;color:var(--mu)!important;height:28px}
+html body #main .vt .vchip:hover{color:var(--tx)!important}
+html body #main .vt .vchip.on{background:var(--bd)!important;color:var(--tx)!important}
+html body #main .vt .vviz.rings svg{filter:none}
+html body #main .vt .vviz .sg:hover{filter:none;opacity:.85}
+html body #main .vt .rc b{color:var(--tx)}
+html body #main .vt .rc span:last-child,html body #main .vt .rc .rdb{color:var(--mu)}
+html body #main .vt .vlist{background:none!important;border:0!important;box-shadow:none!important;padding:0}
+html body #main .vt .vr{border-bottom:1px solid var(--bd);color:var(--tx)}
+html body #main .vt .vr:hover{background:var(--bd)}
+html body #main .vt .vr .s,html body #main .vt .vr .p{color:var(--mu)}
+html body #main .vt .vr .dt{width:10px;height:10px;box-shadow:none;margin-left:3px}
+html body #main .vt .vr.free .dt{background:var(--bd)!important;box-shadow:inset 0 0 0 1px var(--mu)}
+html body #main .vt .vq{gap:10px}
+html body #main .vt .qt{height:auto;min-height:96px;justify-content:flex-start;gap:2px;padding:14px 16px;background:transparent!important;border:1px solid var(--bd)!important;box-shadow:none!important;color:var(--tx)}
+html body #main .vt button.qt:hover{transform:none;box-shadow:none!important;border-color:var(--a)!important}
+html body #main .vt .qt .qi{color:var(--mu)}
+html body #main .vt .qt>span:last-child{color:var(--mu)}
+html body #main .vt .vtile{height:98px;background:var(--card)!important;border:1px solid var(--bd)!important;box-shadow:none!important}
+html body #main .vt .vtile:hover{transform:none;border-color:var(--t)!important;box-shadow:none!important}
+html body #main .vt .vtile .vti{background:none!important;box-shadow:none!important;color:var(--t)}
+html body #main .vt .qt .qi{position:static;margin-bottom:10px}
+html body #main .vt .qt b{font-size:19px;white-space:nowrap}
+html body #main .vt .vtile .vti{width:30px;height:30px;top:12px;left:14px}
+html body #main .vt .vtile b{color:var(--tx)}
+html body #main .vt .vtile .vtm2,html body #main .vt .vtile .vchv{color:var(--mu)}
+html body #main .vt .vtile.hit{box-shadow:0 0 0 1.5px var(--t)!important}
+
+/* compact storage card + new diagram shapes */
+html body #main .vt .vA{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px;margin-bottom:14px}
+html body #main .vt .qt>span:last-child{white-space:nowrap}
+@media(max-width:980px){html body #main .vt .vA{grid-template-columns:minmax(0,1fr)}}
+html body #main .vt .vbody{display:grid;grid-template-columns:220px minmax(0,1fr)!important;gap:28px;align-items:center;margin-top:12px;flex:none}
+html body #main .vt .vviz,html body #main .vt .vviz.alt{width:220px;height:120px;min-height:0;margin:0}
+html body #main .vt .vviz svg{width:100%;height:100%;max-height:none;display:block;overflow:visible}
+html body #main .vt .vn-t1{font:700 20px var(--sk-font);fill:var(--tx);text-anchor:middle}
+html body #main .vt .vn-t2{font:400 10.5px var(--sk-font);fill:var(--mu)}
+html body #main .vt .vviz .sg{cursor:pointer;transition:opacity .15s}
+html body #main .vt .vviz .sg:hover{opacity:.7;filter:none}
+html body #main .vt .vr{height:34px;grid-template-columns:22px 1fr 84px 62px}
+html body #main .vt .vq{gap:8px}
+html body #main .vt .vquick{padding:18px 18px 16px}
+html body #main .vt .vquick h3{margin:0 0 12px 2px}
+html body #main .vt .qt{display:grid;grid-template-columns:26px 1fr;column-gap:10px;row-gap:0;align-content:center;align-items:center;min-height:62px;padding:10px 14px}
+html body #main .vt .qt .qi{grid-row:1/3;margin:0}
+html body #main .vt .qt b,html body #main .vt .qt>span:last-child{grid-column:2}
+html body #main .vt .qt b{font-size:17px;line-height:20px}
+@media(max-width:700px){html body #main .vt .vbody{grid-template-columns:1fr!important;gap:12px}html body #main .vt .vviz{margin:0 auto}}
+
+html body #main .vt .vlist{max-height:178px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--bd) transparent;padding-right:2px}
+@keyframes vn-tide{to{transform:translateX(-55px)}}
+html body #main .vt .vn-tw{animation:vn-tide 8s linear infinite}
+@media(prefers-reduced-motion:reduce){html body #main .vt .vn-tw{animation:none}}
+html body #main .vt .vviz path.sg:hover,html body #main .vt .vviz g.sg:hover{opacity:.75}
+
+/* ===== Vault: signature diagrams (Dial / Hive / Towers / Stars), 240x150 ===== */
+html body #main .vt .vbody{grid-template-columns:240px minmax(0,1fr)!important;gap:26px}
+html body #main .vt .vviz,html body #main .vt .vviz.alt{width:240px;height:150px}
+html body #main .vt .vlist{max-height:176px}
+@keyframes vn-spin{to{transform:rotate(360deg)}}
+@keyframes vn-spin-r{to{transform:rotate(-360deg)}}
+@keyframes vn-pop{from{opacity:0;transform:scale(.35)}to{opacity:1;transform:scale(1)}}
+@keyframes vn-grow{from{transform:scaleY(.05);opacity:.2}to{transform:scaleY(1);opacity:1}}
+@keyframes vn-glow{0%,100%{opacity:.55;transform:scale(.9)}50%{opacity:1;transform:scale(1.25)}}
+html body #main .vt .vn-spin{animation:vn-spin 90s linear infinite}
+html body #main .vt .vn-spin2{animation:vn-spin-r 60s linear infinite}
+html body #main .vt .vn-pop{transform-box:fill-box;transform-origin:center;animation:vn-pop .5s cubic-bezier(.2,.9,.3,1.3) backwards}
+html body #main .vt .vn-grow{transform-box:fill-box;transform-origin:50% 100%;animation:vn-grow .7s cubic-bezier(.2,.9,.3,1) backwards}
+html body #main .vt .vn-twk{animation:vn-glow 3.4s ease-in-out infinite}
+html body #main .vt .vn-pulse{animation:vn-glow 4s ease-in-out infinite}
+html body #main .vt .vviz g.sg{transition:opacity .15s,filter .2s}
+html body #main .vt .vviz g.sg:hover{opacity:1;filter:drop-shadow(0 0 5px rgba(120,200,255,.55)) brightness(1.12)}
+html body #main .vt .vviz .vn-arc{transition:stroke-width .2s}
+html body #main .vt .vviz g.sg:hover .vn-arc{stroke-width:9}
+@media(prefers-reduced-motion:reduce){html body #main .vt .vn-spin,html body #main .vt .vn-spin2,html body #main .vt .vn-pop,html body #main .vt .vn-grow,html body #main .vt .vn-twk,html body #main .vt .vn-pulse{animation:none}}
+@media(max-width:700px){html body #main .vt .vviz{width:min(100%,260px);height:auto;aspect-ratio:240/150}}
 </style>
 </body></html>
