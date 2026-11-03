@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><title>ALPHA</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><script src="alpha-native.js"></script>
 <script>try{var __i=JSON.parse(localStorage.getItem('alpha.ti'));if(__i!=null&&__i>=0){var __d=document.documentElement;__d.dataset.t=__i;__d.dataset.theme=(__i>=5&&__i<=9)?'light':'dark'}}catch(e){}</script>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
@@ -2953,7 +2953,8 @@ function signInPanel(){
  <input id="acp" type="tel" placeholder="+8801XXXXXXXXX" autocomplete="tel" style="width:100%;margin:6px 0"><button class="btn" id="acs" style="width:100%">📱 Send SMS code</button><div id="rcap"></div></div><div id="acn" class="mu" style="margin-top:10px;font-size:12.5px"></div>`);
  if(!m)return;const $=id=>document.getElementById(id),note=t=>{$('acn').textContent=t};
  $('acx').onclick=close;
- $('acg').onclick=async()=>{try{const F=await fb();note('Opening Google…');await F.a.signInWithPopup(F.auth,new F.a.GoogleAuthProvider())}catch(e){note(errMsg(e))}};
+ $('acg').onclick=async()=>{try{const F=await fb();note('Opening Google…');if(window.AlphaNative&&window.AlphaNative.googleIdToken){const t=await window.AlphaNative.googleIdToken();await F.a.signInWithCredential(F.auth,F.a.GoogleAuthProvider.credential(t))}else await F.a.signInWithPopup(F.auth,new F.a.GoogleAuthProvider())}catch(e){note(errMsg(e))}};
+ if(window.AlphaNative){['ace','acm','acp','acs'].forEach(i=>{const e=$(i);if(e)e.style.display='none'});note('On the Android app, sign in with Google.')}
  $('acm').onclick=async()=>{const em=$('ace').value.trim();if(!/^\S+@\S+\.\S+$/.test(em)){note('Enter a valid email');return}
   try{const F=await fb();LSK.setItem('acct.pend',JSON.stringify({email:em}));await F.a.sendSignInLinkToEmail(F.auth,em,{url:location.origin+location.pathname,handleCodeInApp:true});note('Link sent to '+em+'. Open it on this device (or any device) to finish signing in.')}catch(e){LSK.removeItem('acct.pend');note(errMsg(e))}};
  $('acs').onclick=async()=>{const ph=$('acp').value.trim().replace(/[\s-]/g,'');if(!/^\+\d{8,15}$/.test(ph)){note('Use the full number with country code, e.g. +8801…');return}
@@ -4984,5 +4985,33 @@ html body #main .vt .vviz .vn-arc{transition:stroke-width .2s}
 html body #main .vt .vviz g.sg:hover .vn-arc{stroke-width:9}
 @media(prefers-reduced-motion:reduce){html body #main .vt .vn-spin,html body #main .vt .vn-spin2,html body #main .vt .vn-pop,html body #main .vt .vn-grow,html body #main .vt .vn-twk,html body #main .vt .vn-pulse{animation:none}}
 @media(max-width:700px){html body #main .vt .vviz{width:min(100%,260px);height:auto;aspect-ratio:240/150}}
+</style>
+<style id="alpha-mobile-sbar">
+/* Mobile fix: selection bar had a transparent background and overlapped the file list. Now a compact solid bar. */
+@media (max-width:760px){
+ #main #sbar.fsel,#sbar.fsel{position:sticky;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:60;display:flex;flex-direction:column;flex-wrap:nowrap;align-items:stretch;justify-content:flex-start;gap:6px;width:100%;margin-top:14px;padding:8px;border-radius:20px;background:rgba(9,14,38,.98);border:1px solid rgba(255,255,255,.14);box-shadow:0 18px 40px -10px #000;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+ #sbar.fsel .r:first-child{height:auto;padding:0 2px;gap:6px;flex-wrap:nowrap;background:none;border:0;box-shadow:none}
+ #sbar.fsel .r:first-child>b{flex:1 1 auto;min-width:0;gap:8px;font-size:13px}
+ #sbar.fsel .sbz{display:none}
+ #sbar.fsel .sbt b{font-size:13px;white-space:nowrap}
+ #sbar.fsel .r:first-child .chip{height:30px;padding:0 10px;font-size:12px;white-space:nowrap;flex:none}
+ #sbar.fsel .r:last-child{display:flex;flex-wrap:nowrap;justify-content:stretch;gap:6px}
+ #sbar.fsel .r:last-child .chip,#sbar.fsel #a-mv{flex:1 1 0;min-width:0;justify-content:center;height:40px;padding:0 4px;gap:4px;font-size:12px;font-weight:600;border-radius:20px;white-space:nowrap}
+ #sbar.fsel .r:last-child .chip svg,#sbar.fsel #a-mv svg{width:15px;height:15px;flex:none}
+}
+@media (max-width:400px){#sbar.fsel .r:last-child .chip svg{display:none}}
+@media (max-width:480px){
+ #main .fls .tk{gap:10px}
+ #main .fls .tk .grow{font-size:16px;line-height:22px}
+ #main .fls .tk .grow .mu{font-size:12.5px;line-height:18px;overflow:hidden;text-overflow:ellipsis}
+ #main .fls .tk .fev{width:44px;height:44px}
+ #main .fls .tk .fkb{width:36px;height:44px;margin-left:0}
+}
+@media (max-width:370px){
+ html body #main .vt .vq{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+ html body #main .vt .qt{min-width:0;padding:10px;column-gap:8px;grid-template-columns:22px minmax(0,1fr)}
+ html body #main .vt .qt b{font-size:15px}
+ html body #main .vt .qt>span:last-child{white-space:normal;font-size:12px;overflow-wrap:anywhere}
+}
 </style>
 </body></html>
