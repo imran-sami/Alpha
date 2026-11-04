@@ -1,4 +1,27 @@
 /* ALPHA Android bridge. Does nothing in a normal browser; active only inside the Capacitor APK. */
+/* 0) Edge-to-edge insets. Android WebView's env(safe-area-inset-*) ignores the status bar and the 3-button / gesture
+      navigation bar, so content ended up underneath them. MainActivity (see scripts/patch-android.sh) measures the real
+      system bars + keyboard and pushes them here; index.html uses var(--sa-top|right|bottom|left) everywhere. */
+(function () {
+  var root = document.documentElement;
+  function apply(t, r, b, l) {
+    var st = root.style;
+    st.setProperty('--sa-top', t + 'px'); st.setProperty('--sa-right', r + 'px');
+    st.setProperty('--sa-bottom', b + 'px'); st.setProperty('--sa-left', l + 'px');
+  }
+  window.__alphaInsets = apply;
+  var A = window.AlphaInsets;
+  if (!A) return;
+  try { var v = String(A.get()).split(','); if (v.length === 4) apply(+v[0], +v[1], +v[2], +v[3]); } catch (e) {}
+  /* system-bar icon colour follows the theme (dark icons on light themes) */
+  function bars() {
+    try { A.setLight(root.getAttribute('data-theme') === 'light'); } catch (e) {}
+  }
+  bars();
+  try { new MutationObserver(bars).observe(root, { attributes: true, attributeFilter: ['data-theme', 'data-t'] }); } catch (e) {}
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) { try { var q = String(A.get()).split(','); apply(+q[0], +q[1], +q[2], +q[3]); } catch (e) {} bars(); } });
+})();
+
 (function () {
   var C = window.Capacitor;
   if (!C || !C.isNativePlatform || !C.isNativePlatform()) return;
@@ -64,6 +87,6 @@
   document.addEventListener('visibilitychange', sync);
 
   /* 4) Status bar + hardware back button */
-  try { if (P.StatusBar) { P.StatusBar.setStyle({ style: 'DARK' }); P.StatusBar.setBackgroundColor({ color: '#04080d' }); } } catch (e) {}
+  /* status / navigation bar are transparent and drawn by MainActivity (see above); the StatusBar plugin is no longer needed */
   try { if (P.App) P.App.addListener('backButton', function (ev) { try { if (window.__gfBack && window.__gfBack()) return; } catch (e) {} if (ev.canGoBack) history.back(); else P.App.minimizeApp(); }); } catch (e) {}
 })();
