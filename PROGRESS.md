@@ -76,3 +76,28 @@ Goal: pages look like the reference pictures; app icon and all functionality unc
 - Replaced Orbit/Tide/Bloom/Flow with four new 240x150 shapes: Dial (vault door: ticking bezel, category arcs on the lock ring, spoked wheel + keyhole), Hive (61-cell honeycomb, each file type owns a spiral of cells), Towers (isometric glass skyline, height = size, % labels), Stars (constellation, vault = sun, star size = share). Default = Dial
 - Hover highlights a whole category; click still opens the category details. Animations respect reduced-motion; works in dark + light themes
 - Service-worker cache bumped to v42
+
+## Files actions: Google Files style - DONE
+- Whole file-actions system rebuilt on the Google Files pattern (new module <style id="alpha-gf-css"> + <script id="alpha-gf-js"> at the end of index.html; 2 tiny hooks in the old selection script: paint() calls window.__gfSync, and window.__gfSel exports the selection helpers)
+- Confirm box (the Cancel/Confirm popup) -> Material dialog (title, text, Cancel / Delete|Erase|Confirm text buttons)
+- Selection mode: top app bar (X, "N selected", Select all, Share, Trash, 3-dot). Trash page: Restore / Delete forever. Old bottom bar hidden for files
+- Row 3-dot (and right-click) -> bottom sheet: Open, Share, Copy to, Move to, Rename, Star, Info, Save to device, Edit text, Move to trash
+- Copy to / Move to -> full-screen destination picker with "Copy here / Move here" bar and progress snackbar
+- Snackbar with Undo for trash, move, copy, restore. Permanent delete asks first
+- Rename dialog (name preselected, duplicate + illegal-character check), Info sheet, Starred files + Starred filter
+- Sort by sheet (Name / Modified / Size / Type, asc/desc), List/Grid toggle, empty states (files, trash, no results); choices remembered
+- Image/video/audio viewer: pinch zoom, double-tap zoom, mouse-wheel zoom, +/- buttons, drag to pan, swipe / arrow keys for next-previous, tap to hide bars, top bar Share / Trash / Info menu
+- Keyboard: Esc, Ctrl+A, Delete. Android back button closes sheet / viewer / selection first (alpha-native.js)
+- Service-worker cache bumped to v50
+
+## Vault: Files by Google rebuild - DONE
+- Old Vault UI (Dial/Hive/Towers/Stars, Quick overview, category tiles) replaced by a Files-by-Google style module: <style id="alpha-gv-css"> + <script id="alpha-gv-js"> at the end of index.html. Data layer (IndexedDB, encryption, categories, trash, starred) unchanged
+- Home: search pill, Recent, Categories, Collections (Favorites, Trash), Storage; category list/grid, sort, selection mode, row sheet, rename, copy/move picker, snackbar+Undo, Trash, Favorites, search, viewer
+- Removed: storage diagrams, Quick overview, "New file" button, pinch-zoom viewer (tap-to-zoom now). Text files still editable from the menu
+- Service-worker cache bumped to v51
+
+## Vault storage page - DONE
+- Vault home Storage = one option row; tap opens a Storage page (Overview gauge + stats, Categories donut, Treemap, Bubbles, Largest files bars, Activity columns). Cache v58
+
+## Vault storage page: Files by Google style - DONE
+- Storage page restyled like Files by Google (Material 3): app bar, filter chips, rounded cards, pill buttons, category icons, Google wording. Tabs: Overview, Categories, Large files, Activity (Treemap and Bubbles removed)
