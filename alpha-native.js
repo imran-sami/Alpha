@@ -64,6 +64,6 @@
   document.addEventListener('visibilitychange', sync);
 
   /* 4) Status bar + hardware back button */
-  try { if (P.StatusBar) { P.StatusBar.setStyle({ style: 'DARK' }); P.StatusBar.setBackgroundColor({ color: '#03061a' }); } } catch (e) {}
+  try { if (P.StatusBar) { P.StatusBar.setStyle({ style: 'DARK' }); P.StatusBar.setBackgroundColor({ color: '#04080d' }); } } catch (e) {}
   try { if (P.App) P.App.addListener('backButton', function (ev) { try { if (window.__gfBack && window.__gfBack()) return; } catch (e) {} if (ev.canGoBack) history.back(); else P.App.minimizeApp(); }); } catch (e) {}
 })();
