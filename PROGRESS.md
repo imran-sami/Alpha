@@ -113,3 +113,11 @@ Goal: pages look like the reference pictures; app icon and all functionality unc
 - New files: alpha-viewers.js (UI kit + PDF), alpha-editor.js (text/code), alpha-slides.js (presentations), vendor/pdf.min.js + pdf.worker.min.js
 - Tested: tokenizer/encodings (node), generated .pptx opens in python-pptx and round-trips, jsdom smoke test of editor/create/save/slides (27 checks)
 - NOT tested on a real device / APK build (no Android SDK in the authoring environment)
+
+## Layout fix v1 - DONE
+- <style id="alpha-layout-fix"> before the viewer scripts in index.html: full-screen layers (.av viewers, Slides editor, #rdr, .gf-ov, .gv-ov) stop above the system navigation bar; tile/heading text wraps with padding; home greeting/More no longer overlap; Slides thumbnail strip no longer clipped. Service-worker cache v52.
+
+## Profile photo + focus goal fixes - DONE
+- Top-right profile icon now only shows the profile picture (full view, back to close). Settings is still in the menu drawer.
+- Settings: "Profile photo" row removed; tapping the avatar adds/changes the photo (saved at once); "Remove photo" pill button appears under the name when a photo exists.
+- Focus goal page: "Save" button no longer wraps onto two lines.

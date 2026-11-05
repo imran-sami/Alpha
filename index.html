@@ -114,7 +114,7 @@ html[data-theme=light] #mnI{--lk-a:#0891b2;--lk-b:#0d9f78;--mn-bg:#f3f9fb;--mn-t
 <div id="app"><nav><div class="logo">ALPHA</div>
 <button data-v="dash" class="on"><i>◉</i>Home</button><button data-v="ins"><i>◐</i>Insights</button><button data-v="vault"><i>◈</i>Vault</button><button data-v="hist"><i>≡</i>History</button></nav>
 <main id="main"></main></div>
-<div class="fab"><button id="th" title="Settings" style="overflow:hidden;padding:0">👤</button><button id="lk" title="Lock now">🔒</button></div><div id="toast"></div><div id="modal"><div id="mc"></div></div>
+<div class="fab"><button id="th" title="Settings" style="overflow:hidden;padding:0"></button><button id="lk" title="Lock now">🔒</button></div><div id="toast"></div><div id="modal"><div id="mc"></div></div>
 <script>
 const $=s=>document.querySelector(s),C={Work:'#7c5cff',Fitness:'#ff4d8d',Study:'#22d3ee',Leisure:'#fbbf24',Sleep:'#34d399'};let GOAL=360;
 const ls={g(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},s(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
@@ -207,7 +207,7 @@ let pname=ls.g('alpha.name','Alpha'),lang=ls.g('alpha.lang','en'),ti=ls.g('alpha
 const themes=[['Midnight','d','#0a0818','#17113a','#8b6bff','#22d3ee'],['Ocean','d','#041420','#0a2a40','#38bdf8','#2dd4bf'],['Emerald','d','#04140e','#0b2a1d','#34d399','#a3e635'],['Sunset','d','#180a0a','#3a1710','#fb923c','#f43f5e'],['Rose','d','#16080f','#3a1028','#f472b6','#c084fc'],['Pearl','l','#f3f1fb','#e6e2f7','#6d4aff','#00b8d9'],['Sky','l','#eef7ff','#d9ecfb','#0ea5e9','#6366f1'],['Mint','l','#effaf4','#d6f1e3','#10b981','#0ea5e9'],['Peach','l','#fff4ee','#ffe3d3','#f97316','#ec4899'],['Lavender','l','#f6f0ff','#e8dbff','#a855f7','#ec4899']];
 const st=document.createElement('style');st.textContent=themes.map((t,i)=>`:root[data-t="${i}"][data-theme]{--bg:${t[2]};--bg2:${t[3]};--a:${t[4]};--b:${t[5]};--glow:${t[4]}55;${t[1]=='d'?'--card:rgba(255,255,255,.06);--bd:rgba(255,255,255,.1);--tx:#f2f0ff;--mu:#9d98c8':'--card:rgba(255,255,255,.78);--bd:rgba(90,70,200,.15);--tx:#1a1533;--mu:#6b6790'}}`).join('')+'.tile{text-align:left;color:var(--tx);cursor:pointer;display:flex;flex-direction:column;gap:6px;font:inherit}.tile:hover{border-color:var(--a)}.ti{font-size:28px}.tg{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;justify-items:center}.sw{width:42px;height:42px;border-radius:50%;border:3px solid transparent;position:relative;overflow:hidden;cursor:pointer;transition:.2s}.sw:hover{transform:scale(1.1)}.sw.on{border-color:var(--tx)}.sw i{position:absolute;left:0;right:0;bottom:0;height:45%}';document.head.appendChild(st);
 function applyTheme(i){ti=i;const d=document.documentElement;d.dataset.t=i;d.dataset.theme=themes[i][1]=='d'?'dark':'light';ls.s('alpha.ti',i)}if(themes[ti])applyTheme(ti);
-function setAv(f){if(f)avU=URL.createObjectURL(f);const h=avU?`<img src="${avU}" style="width:100%;height:100%;object-fit:cover">`:'👤';$('#th').innerHTML=h;const p=$('#pv');if(p)p.innerHTML=h}
+function setAv(f){if(f)avU=URL.createObjectURL(f);const h=avU?`<img src="${avU}" style="width:100%;height:100%;object-fit:cover">`:'';$('#th').innerHTML=h;const p=$('#pv');if(p)p.innerHTML=avU?h:'<svg class="sil" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.2" r="4.2"/><path d="M2.5 24c.4-6.2 4.2-9.6 9.5-9.6s9.1 3.4 9.5 9.6z"/></svg>'}
 (async()=>{try{db=db||await idb();const r=await tx('readonly',s=>s.get('avatar'));if(r&&r.blob)setAv(r.blob)}catch(e){}})();
 const D={'Home':'হোম','Insights':'বিশ্লেষণ','Vault':'ভল্ট','History':'ইতিহাস','Good morning':'শুভ সকাল','Good afternoon':'শুভ অপরাহ্ন','Good evening':'শুভ সন্ধ্যা','Your day, live.':'আপনার দিন, লাইভ।','Start an activity':'কাজ শুরু করুন','Tracking':'ট্র্যাকিং','Today by hour · live':'আজকের ঘণ্টাভিত্তিক · লাইভ','Today':'আজ','Streak':'ধারা','days active':'দিন সক্রিয়','sessions':'সেশন','Focus goal':'ফোকাস লক্ষ্য','Edit goal':'লক্ষ্য পরিবর্তন','Stop':'থামান','Start':'শুরু','Work':'কাজ','Fitness':'ব্যায়াম','Study':'পড়াশোনা','Leisure':'অবসর','Sleep':'ঘুম','Time split':'সময় বণ্টন','Daily trend':'দৈনিক ধারা','Balance':'ভারসাম্য','Weekly rhythm':'সাপ্তাহিক ছন্দ','Session map':'সেশন মানচিত্র','Weekly stack':'সাপ্তাহিক স্তূপ','Productivity':'উৎপাদনশীলতা','Score':'স্কোর','Tap a card to explore':'বিস্তারিত দেখতে কার্ডে ট্যাপ করুন','Deep dive · last 7 days':'বিস্তারিত','View details ›':'বিস্তারিত দেখুন ›','Settings':'সেটিংস','Profile':'প্রোফাইল','Theme':'থিম','Language':'ভাষা','Close':'বন্ধ','Change photo':'ছবি পরিবর্তন','Add files':'ফাইল যোগ করুন','Your vault is empty. Any file type works.':'আপনার ভল্ট খালি।','Open':'খুলুন','Clear all data':'সব ডেটা মুছুন','Nothing yet.':'এখনো কিছু নেই।','Create PIN':'পিন তৈরি করুন','Unlock':'আনলক','Enter your PIN to unlock':'আনলক করতে পিন দিন','Forgot PIN? Reset ALPHA':'পিন ভুলে গেছেন? রিসেট','Wrong PIN':'ভুল পিন','What are you doing?':'আপনি কি করছেন?','Name':'নাম'};
 const DK=Object.keys(D).sort((a,b)=>b.length-a.length),bd=s=>s.replace(/\d/g,c=>'০১২৩৪৫৬৭৮৯'[c]);
@@ -224,7 +224,7 @@ const TL=[['split','◔','Time split',()=>bycat(7).sort((a,b)=>b.m-a.m)[0].k,()=
 function shut(){$('#modal').style.display='none'}$('#modal').onclick=e=>{if(e.target.id=='modal')shut()};
 function showD(k){const t=TL.find(x=>x[0]==k);$('#mc').innerHTML=`<div style="width:min(88vw,500px)"><div class="row sp" style="margin-bottom:12px"><b style="font-size:18px">${t[2]}</b><button class="chip sm" id="mx">Close</button></div><div style="text-align:center">${t[4]()}</div></div>`;$('#mx').onclick=shut;$('#modal').style.display='flex'}
 V.ins=function(){$('#main').innerHTML=`<h1>Insights</h1><p class="sub">Tap a card to explore</p><div class="grid">${TL.map(t=>`<button class="card tile" data-k="${t[0]}"><span class="ti">${t[1]}</span><b>${t[2]}</b><span class="mu">${t[3]()}</span><span class="mu">View details ›</span></button>`).join('')}</div>`;document.querySelectorAll('.tile').forEach(b=>b.onclick=()=>showD(b.dataset.k))};
-function openSet(){$('#mc').innerHTML=`<div style="width:min(88vw,440px)"><div class="row sp"><b style="font-size:18px">Settings</b><button class="chip sm" id="mx">Close</button></div><h3 class="mu" style="margin:16px 0 8px">Profile</h3><div class="row"><div id="pv" style="width:64px;height:64px;border-radius:50%;background:var(--card);border:1px solid var(--bd);overflow:hidden;display:grid;place-items:center;font-size:28px;flex:none">👤</div><div class="grow" style="overflow:visible"><input type="text" id="pn" value="${esc(pname)}" placeholder="Name"><label class="chip sm" style="display:inline-block;margin-top:8px">Change photo<input type="file" id="pf" accept="image/*,.heic,.heif,.avif,.tiff,.raw" hidden></label></div></div><h3 class="mu" style="margin:18px 0 8px">Theme</h3><div class="tg">${themes.map((t,i)=>`<button class="sw ${i==ti?'on':''}" data-i="${i}" title="${t[0]}" style="background:linear-gradient(135deg,${t[4]},${t[5]})"><i style="background:${t[2]}"></i></button>`).join('')}</div><h3 class="mu" style="margin:18px 0 8px">Language</h3><div class="row">${[['en','English'],['bn','বাংলা']].map(l=>`<button class="chip ${lang==l[0]?'on':''}" style="${lang==l[0]?'background:var(--a)':''}" data-l="${l[0]}">${l[1]}</button>`).join('')}</div></div>`;
+function openSet(){$('#mc').innerHTML=`<div style="width:min(88vw,440px)"><div class="row sp"><b style="font-size:18px">Settings</b><button class="chip sm" id="mx">Close</button></div><h3 class="mu" style="margin:16px 0 8px">Profile</h3><div class="row"><div id="pv" style="width:64px;height:64px;border-radius:50%;background:var(--card);border:1px solid var(--bd);overflow:hidden;display:grid;place-items:center;font-size:28px;flex:none"><svg class="sil" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.2" r="4.2"/><path d="M2.5 24c.4-6.2 4.2-9.6 9.5-9.6s9.1 3.4 9.5 9.6z"/></svg></div><div class="grow" style="overflow:visible"><input type="text" id="pn" value="${esc(pname)}" placeholder="Name"><label class="chip sm" style="display:inline-block;margin-top:8px">Change photo<input type="file" id="pf" accept="image/*,.heic,.heif,.avif,.tiff,.raw" hidden></label></div></div><h3 class="mu" style="margin:18px 0 8px">Theme</h3><div class="tg">${themes.map((t,i)=>`<button class="sw ${i==ti?'on':''}" data-i="${i}" title="${t[0]}" style="background:linear-gradient(135deg,${t[4]},${t[5]})"><i style="background:${t[2]}"></i></button>`).join('')}</div><h3 class="mu" style="margin:18px 0 8px">Language</h3><div class="row">${[['en','English'],['bn','বাংলা']].map(l=>`<button class="chip ${lang==l[0]?'on':''}" style="${lang==l[0]?'background:var(--a)':''}" data-l="${l[0]}">${l[1]}</button>`).join('')}</div></div>`;
 setAv();$('#mx').onclick=shut;$('#pn').oninput=e=>{pname=e.target.value;ls.s('alpha.name',pname)};
 $('#pf').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{db=db||await idb();await tx('readwrite',s=>s.put({id:'avatar',blob:f,name:f.name}))}catch(x){}setAv(f);toast('Photo saved')};
 document.querySelectorAll('.sw').forEach(b=>b.onclick=()=>{applyTheme(+b.dataset.i);openSet()});
@@ -375,7 +375,7 @@ function chLock(){let m=lmode,pf=null;const er=t=>{$('#cer').textContent=t},draw
 const _sh=shut;shut=function(){if(sset&&!sset.saved)revSet();sset=null;_sh()};
 function revSet(){const s=sset;let c=0;if(ti!=s.ti)applyTheme(s.ti);if(lang!=s.lang){lang=s.lang;ls.s('alpha.lang',lang);document.querySelectorAll('nav button').forEach(x=>x.lastChild.nodeValue=x._o);tr($('nav'));c=1}if(h24!=s.h24){h24=s.h24;ls.s('alpha.h24',h24);c=1}if(pname!=s.pname){pname=s.pname;ls.s('alpha.name',pname);c=1}if(c&&key){go(view);clk()}}
 const _os2=openSet;openSet=function(){if(!sset)sset={pname,ti,lang,h24,saved:false};_os2();$('#mc>div').insertAdjacentHTML('beforeend',`<h3 class='mu' style='margin:18px 0 8px'>Security</h3><p class='mu' style='margin-bottom:8px'>Current lock: ${LN[lmode]}</p><button class='chip' id='cl2'>🔐 Change lock (PIN / Password / Pattern)</button><div style='position:sticky;bottom:-8px;background:var(--bg);padding:14px 0 0;margin-top:14px'><button class='btn' id='sa' style='width:100%'>💾 Save changes</button></div>`);$('#cl2').onclick=()=>{sset.saved=true;chLock()};$('#sa').onclick=()=>{sset.saved=true;toast('Settings saved');shut()}};
-$('#th').onclick=()=>{$('#mc').innerHTML=`<div style='text-align:center'><div class='row sp'><b style='font-size:18px'>Profile</b><button class='chip sm' id='mx'>Close</button></div>${avU?`<img src='${avU}' style='width:100%;max-height:60vh;object-fit:contain;border-radius:22px;margin-top:14px'>`:`<div style='font-size:96px;margin:20px 0'>👤</div>`}<h2 style='margin-top:12px;overflow-wrap:anywhere'>${esc(pname)}</h2></div>`;$('#mx').onclick=shut;$('#modal').style.display='flex'};
+$('#th').onclick=()=>{$('#mc').innerHTML=`<div style='text-align:center'><div class='row sp'><b style='font-size:18px'>Profile</b><button class='chip sm' id='mx'>Close</button></div>${avU?`<img src='${avU}' style='width:100%;max-height:60vh;object-fit:contain;border-radius:22px;margin-top:14px'>`:`<div style='width:140px;height:140px;margin:20px auto' class='sil-w'><svg class="sil" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.2" r="4.2"/><path d="M2.5 24c.4-6.2 4.2-9.6 9.5-9.6s9.1 3.4 9.5 9.6z"/></svg></div>`}<h2 style='margin-top:12px;overflow-wrap:anywhere'>${esc(pname)}</h2></div>`;$('#mx').onclick=shut;$('#modal').style.display='flex'};
 const nv=$('nav');nv.querySelector('[data-v=ins]').insertAdjacentHTML('afterend',`<button data-v='cal' class='dx'><i>📅</i>Calendar</button>`);nv.querySelector('[data-v=hist]').insertAdjacentHTML('afterend',`<button data-v='quo' class='dx'><i>📖</i>Reminder</button>`);nv.insertAdjacentHTML('beforeend',`<button id='nset' style='margin-top:auto'><i>⚙</i>Settings</button>`);nv.querySelectorAll('button').forEach(b=>{b._o=b.lastChild.nodeValue;if(b.dataset.v)b.onclick=()=>go(b.dataset.v)});$('#nset').onclick=()=>openSet();tr(nv);
 function newF(k){const ex=k=='code'?['js','py','html','css','json','md','java','cpp','sql']:['txt'];let e=ex[0];$('#mc').innerHTML=`<div><div class='row sp' style='margin-bottom:14px'><b style='font-size:18px'>New file</b><button class='chip sm' id='mx'>Close</button></div><input type='text' id='nn' placeholder='File name'>${k=='code'?`<div class='chips' style='margin-top:10px'>${ex.map(x=>`<button class='chip' data-e='${x}'>.${x}</button>`).join('')}</div>`:''}<div class='row' style='margin-top:16px'><button class='btn' id='nc' style='flex:1'>Create and write</button></div></div>`;const hl=()=>document.querySelectorAll('[data-e]').forEach(b=>{b.style.background=b.dataset.e==e?'var(--a)':'';b.style.color=b.dataset.e==e?'#fff':''});hl();document.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>{e=b.dataset.e;hl()});$('#mx').onclick=shut;$('#nc').onclick=async()=>{let n=$('#nn').value.trim()||'Untitled';if(!/\.[A-Za-z0-9]+$/.test(n))n+='.'+e;const t=Date.now(),f={id:t+Math.random(),name:n,type:'text/plain',size:0,d:await en(new Uint8Array(0)),added:t,edited:t,trash:0};await svf(f);shut();fcur=k;edP(f)};$('#modal').style.display='flex'}
 const _ed=edP;edP=async function(f){await _ed(f);const ta=$('#ta');if(!ta)return;const code=fcat(f)=='code';ta.style.fontFamily=code?'ui-monospace,Menlo,Consolas,monospace':'inherit';ta.style.fontSize=code?'14px':'16px';ta.style.tabSize=2;if(code)ta.addEventListener('keydown',e=>{if(e.key=='Tab'){e.preventDefault();ta.setRangeText('  ',ta.selectionStart,ta.selectionEnd,'end')}});const bar=document.createElement('p');bar.className='mu';bar.style.margin='8px 0';ta.after(bar);const up=()=>{const v=ta.value;bar.textContent=v.length+' chars · '+(v.match(/\S+/g)||[]).length+' words · '+v.split(String.fromCharCode(10)).length+' lines'};ta.addEventListener('input',up);up()};
@@ -5948,7 +5948,9 @@ function keep(id,fn,self,args){const s=LR==id?scrollers().map(e=>[e,e.scrollTop]
 V.dash=window.dash;
 {const g=window.go;window.go=function(){LR='';const r=g.apply(this,arguments);D.body.dataset.gv=view;return r};D.body.dataset.gv=view}
 /* ---- Settings: full Files-by-Google settings page (no tabs, no Save button; every change applies at once) ---- */
-function pickPhoto(){const f=D.createElement('input');f.type='file';f.accept='image/*,.heic,.heif,.avif';f.onchange=async()=>{const x=f.files[0];if(!x)return;try{db=db||await idb();await tx('readwrite',s=>s.put({id:'avatar',blob:x,name:x.name}))}catch(e){}setAv(x);sn('Photo saved')};f.click()}
+function pickPhoto(cb){const f=D.createElement('input');f.type='file';f.accept='image/*,.heic,.heif,.avif';f.onchange=async()=>{const x=f.files[0];if(!x)return;try{db=db||await idb();await tx('readwrite',s=>s.put({id:'avatar',blob:x,name:x.name}))}catch(e){}setAv(x);sn('Photo saved');cb&&cb()};f.click()}
+const hasAv=()=>!!Q('#th img');
+async function rmPhoto(cb){try{db=db||await idb();await tx('readwrite',s=>s.delete('avatar'))}catch(e){}avU=null;setAv();sn('Photo removed');cb&&cb()}
 function setPage(){if(Q('.gs-page'))return;
  const w=D.createElement('div');w.className='gf-ov gf-page gs-page';
  w.innerHTML=`<div class="gf-top"><button data-x aria-label="Back">${ic('back')}</button><div class="gf-tt">Settings</div></div><div class="gf-plist" id="gs-b"></div>`;
@@ -5956,7 +5958,7 @@ function setPage(){if(Q('.gs-page'))return;
  const re=()=>{if(view=='dash'||view=='hist'||view=='ins')V[view]();};
  const opt=(t,list,cur,set)=>()=>sheet(t,list.map(o=>({t:o[1],on:o[0]===cur,fn:()=>{set(o[0]);paint()}})));
  const S=()=>[
-  ['Profile',[['Name',pname||'Alpha',()=>dialog({title:'Your name',input:pname||'',ok:'Save',validate:v=>v.trim()?'':'Name can\u2019t be empty',onok:v=>{pname=v.trim();ls.s('alpha.name',pname);paint();re()}})],['Profile photo','Choose a new photo',pickPhoto]]],
+  ['Profile',[['Name',pname||'Alpha',()=>dialog({title:'Your name',input:pname||'',ok:'Save',validate:v=>v.trim()?'':'Name can\u2019t be empty',onok:v=>{pname=v.trim();ls.s('alpha.name',pname);paint();re()}})]]],
   ['Appearance',[['Theme',themes[ti]?themes[ti][0]:'',()=>sheet('Theme',themes.map((t,i)=>({t:t[0],on:i==ti,fn:()=>{applyTheme(i);paint()}})))],
    ['Language',lang=='bn'?'\u09ac\u09be\u0982\u09b2\u09be':'English',opt('Language',[['en','English'],['bn','\u09ac\u09be\u0982\u09b2\u09be']],lang,v=>{lang=v;ls.s('alpha.lang',v);QA('nav button').forEach(x=>{if(x._o!=null)x.lastChild.nodeValue=x._o});try{tr($('nav'))}catch(e){}if(key&&V[view])go(view)})],
    ['Time format',h24?'24-hour':'12-hour',opt('Time format',[[false,'12-hour'],[true,'24-hour']],h24,v=>{h24=v;ls.s('alpha.h24',v);if(key&&V[view])go(view)})]]],
@@ -5965,12 +5967,17 @@ function setPage(){if(Q('.gs-page'))return;
   ['Goals',[['Daily focus goal',fm(GOAL)+' per day',goalDlg]]],
   ['Data',[['Back up data','Save settings and history to a file',backup],['Restore backup','Load a backup file',restore],['Delete all history',pl(acts.length,'session'),clearAll,1]]]];
  function paint(){const sc=Q('#gs-b',w).scrollTop,P=S();let i=0;
-  Q('#gs-b',w).innerHTML=`<div class="gs-prof"><button class="gs-av" id="pv" aria-label="Change photo"></button><div><b>${esc(pname||'Alpha')}</b><small>ALPHA \u00b7 stored on this device</small></div></div>`+P.map(s=>`<div class="gs-h">${s[0]}</div>`+s[1].map(r=>`<button class="gs-row${r[3]?' dg':''}" data-i="${i++}"${r[2]?'':' data-n="1"'}><b>${r[0]}</b><small>${esc(String(r[1]))}</small></button>`).join('')).join('');
-  const fl=P.flatMap(s=>s[1]);Q('#gs-b',w).onclick=e=>{const b=e.target.closest('.gs-row');if(b){const f=fl[+b.dataset.i][2];f&&f();return}if(e.target.closest('#pv'))pickPhoto()};
+  Q('#gs-b',w).innerHTML=`<div class="gs-prof"><button class="gs-av" id="pv" aria-label="Add or change profile photo"></button><div class="gs-pt"><b>${esc(pname||'Alpha')}</b><small>ALPHA \u00b7 stored on this device</small>${hasAv()?`<button class="gs-rm" id="prm">Remove photo</button>`:''}</div></div>`+P.map(s=>`<div class="gs-h">${s[0]}</div>`+s[1].map(r=>`<button class="gs-row${r[3]?' dg':''}" data-i="${i++}"${r[2]?'':' data-n="1"'}><b>${r[0]}</b><small>${esc(String(r[1]))}</small></button>`).join('')).join('');
+  const fl=P.flatMap(s=>s[1]);Q('#gs-b',w).onclick=e=>{const b=e.target.closest('.gs-row');if(b){const f=fl[+b.dataset.i][2];f&&f();return}if(e.target.closest('#prm')){dialog({title:'Remove profile photo?',body:'Your photo will be removed from this device.',ok:'Remove',danger:1,onok:()=>rmPhoto(paint)});return}if(e.target.closest('#pv'))pickPhoto(paint)};
   try{setAv()}catch(e){}Q('#gs-b',w).scrollTop=sc}
  paint()}
 window.openSet=setPage;
-addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#th')){e.preventDefault();e.stopImmediatePropagation();setPage()}},true);
+function profView(){if(Q('.gs-pview'))return;
+ const im=Q('#th img'),src=im?im.currentSrc||im.src:'';
+ const w=D.createElement('div');w.className='gf-ov gf-page gs-pview';
+ w.innerHTML=`<div class="gf-top"><button data-x aria-label="Back">${ic('back')}</button><div class="gf-tt">${esc(pname||'Alpha')}</div></div><div class="gs-pstage">${src?`<img src="${esc(src)}" alt="Profile photo">`:`<div class="gs-pph"><svg class="sil" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.2" r="4.2"/><path d="M2.5 24c.4-6.2 4.2-9.6 9.5-9.6s9.1 3.4 9.5 9.6z"/></svg></div>`}</div>`;
+ D.body.appendChild(w);const L=U.layer(w);Q('[data-x]',w).onclick=()=>L.close();Q('.gs-pstage',w).onclick=e=>{if(e.target===e.currentTarget)L.close()}}
+addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#th')){e.preventDefault();e.stopImmediatePropagation();profView()}},true);
 
 /* ---- no repeated messages ---- */
 {const t0=window.toast;let lm='',lt=0;window.toast=function(m,l,f){const n=Date.now();if(!l&&m===lm&&n-lt<2500)return;lm=m;lt=n;return t0.apply(this,arguments)}}
@@ -6025,6 +6032,80 @@ document.addEventListener('scroll',e=>{const t=e.target;if(t&&t.matches&&t.match
 const fix=()=>{q=0;M.querySelectorAll(ROWS).forEach(r=>{const on=r.querySelector('.on');if(on){const l=on.offsetLeft-(r.clientWidth-on.offsetWidth)/2;r.scrollLeft=Math.max(0,l);mem[key(r)]=r.scrollLeft}else if(mem[key(r)])r.scrollLeft=mem[key(r)]})};
 new MutationObserver(()=>{if(!q)q=requestAnimationFrame(fix)}).observe(M,{childList:true,subtree:true})})();
 </script>
+<style id="alpha-layout-fix">
+/* ===== layout-fix v1: system-bar insets, tile text, home header, slides rail ===== */
+:root{--sbr:var(--sa-bottom);--str:var(--sa-top)}
+/* 1) every full-screen layer / viewer / editor stops ABOVE the Android navigation bar, so nothing scrolls under it.
+      Inside the layer the bottom inset is 0 (it is already applied once), and a same-colour shadow paints the strip below. */
+.av,#rdr,.gf-ov,.gv-ov,.pt-show-host{bottom:var(--sbr)!important;--sa-bottom:0px}
+.av{box-shadow:0 var(--sbr) 0 0 var(--avbg,#202124)}
+.av.av-ovl{box-shadow:none;bottom:0!important;--sa-bottom:var(--sbr)}
+#rdr{box-shadow:0 var(--sbr) 0 0 var(--bg)}
+.gf-ov{box-shadow:0 var(--sbr) 0 0 var(--bg)}
+/* scroll areas always leave room for the last row */
+.av-pages,.gf-stage .gf-list,.gv-pg,.ga-list{scroll-padding-bottom:24px}
+.ga-list{padding-bottom:calc(96px + var(--sa-bottom))}
+.gv-pg{padding-bottom:calc(96px + var(--sa-bottom))!important}
+#main{scroll-padding-bottom:calc(24px + var(--sa-bottom))}
+@media(max-width:799px){html body #main{padding-bottom:calc(40px + var(--sa-bottom))!important}}
+
+/* 2) tiles + headings: never touch edges, long text wraps instead of clipping */
+#main .sk-cats .cc{height:auto!important;min-height:126px;padding:12px 10px 14px!important}
+#main .sk-cats .cc b{flex-wrap:wrap;text-align:center;overflow-wrap:break-word}
+#main .sk-cats .cc .mu{white-space:normal;text-align:center;overflow-wrap:break-word;padding:0 2px}
+#main .card,#main .gv-c,#main [class*="tile"],#main [class*="ins-"]{min-width:0;overflow-wrap:break-word}
+#main .card h3,#main .card h2,#main .card b{overflow-wrap:break-word;word-break:normal}
+#main h1,#main h2{max-width:100%;overflow-wrap:break-word;padding-left:2px;padding-right:2px}
+.gv-ttl,.av-ttl b,.gf-tt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:4px;padding-right:4px}
+.gv-cd{gap:10px}
+.gv-ct{min-width:0;overflow:hidden}.gv-ct b{font-size:clamp(13px,3.7vw,15px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gv-ct em{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gv-tb{padding-left:4px;padding-right:4px}
+
+/* 3) home: greeting never sits under the top-right buttons / "More" */
+@media(max-width:799px){
+ #main .hd{padding-right:0}
+ #main .hl{padding-right:0}
+ #main .hl h1{max-width:calc(100vw - 36px - var(--sa-left,0px) - var(--sa-right,0px));margin-top:2px}
+ .gv-tb .gv-ib,.gv-tb button[data-a=more]{flex:none;position:relative;z-index:2}
+ .gv-tb .gv-sp{min-width:0;flex:1 1 auto;margin-right:4px}
+ #main .smore,#main .more{position:static!important;float:none!important;margin-top:8px}
+}
+
+/* 4) Slides editor: thumbnail strip no longer clipped, canvas not under the toolbar */
+@media(max-width:700px){
+ .sl-rail{height:auto!important;min-height:112px;align-items:flex-start;padding:10px 10px 18px!important;overflow-y:hidden;overflow-x:auto;flex:none}
+ .sl-th{align-items:flex-start;width:124px!important}
+ .sl-th .b{flex:none;width:100%;height:auto;aspect-ratio:16/9}
+ .sl-main{min-height:0}
+ .sl-stage{min-height:0;padding:10px 12px}
+}
+.sl-tools{padding-bottom:calc(8px + var(--sa-bottom))!important}
+.sl-main,.sl-stage,.sl-vw{min-height:0}
+
+/* 5) Slides top bar: "Slideshow" pill keeps icon + label on one line; Insights banner text has breathing room */
+.av-sl .av-play{display:inline-flex!important;flex-direction:row;align-items:center;justify-content:center;white-space:nowrap;line-height:1;flex:none}
+.av-sl .av-play .avi{width:20px;height:20px}
+.av-sl .av-bar{overflow:hidden}
+@media(max-width:799px){#main .ins-hero{padding:12px 14px;min-width:120px}}
+
+/* ===== profile photo + focus goal fixes ===== */
+.gs-pview{background:#000!important;color:#fff;box-shadow:0 var(--sbr) 0 0 #000!important}
+.gs-pview .gf-top{background:rgba(0,0,0,.55);color:#fff;position:absolute;left:0;right:0;top:0;z-index:2}
+.gs-pstage{position:absolute;inset:0;display:grid;place-items:center;padding:calc(64px + var(--sa-top)) 0 0}
+.gs-pstage img{width:min(100vw,100vh - 120px);max-width:100%;max-height:100%;aspect-ratio:1;object-fit:cover;border-radius:50%;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.gs-pph{width:min(70vw,320px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;font-size:min(30vw,140px);background:rgba(255,255,255,.1)}
+.gs-pt{min-width:0;display:flex;flex-direction:column;align-items:flex-start}.gs-pt small{display:block}
+.gs-rm{display:inline-flex;align-items:center;min-height:40px;margin:12px 0 0 -16px;padding:0 16px;border:0;border-radius:20px;background:none;color:var(--a);font-family:var(--sk-font,'Inter',system-ui,sans-serif);font-size:14.5px;font-weight:600;letter-spacing:.1px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s}
+.gs-rm:hover,.gs-rm:focus-visible{background:color-mix(in oklab,var(--a) 12%,transparent);outline:0}.gs-rm:active{background:color-mix(in oklab,var(--a) 20%,transparent)}
+/* Focus goal page: "Save" must stay on one line */
+#main #gs{flex:none;white-space:nowrap;word-break:normal;writing-mode:horizontal-tb;min-width:88px;height:44px;padding:0 22px;display:inline-flex;align-items:center;justify-content:center}
+#main #gi{flex:1 1 auto;min-width:0;width:auto}
+
+.sil{width:62%;height:62%;fill:currentColor;display:block}
+.gs-av .sil{width:100%;height:100%;color:color-mix(in oklab,var(--a) 70%,var(--tx))}
+.gs-pph{color:rgba(255,255,255,.55);overflow:hidden;font-size:0}.gs-pph .sil{width:100%;height:100%;margin-top:14%}
+.sil-w{border-radius:50%;overflow:hidden;background:rgba(128,128,128,.2);color:var(--mu)}.sil-w .sil{width:100%;height:100%;margin-top:14%}
+</style>
 <script src="alpha-viewers.js"></script>
 <script src="alpha-editor.js"></script>
 <script src="alpha-slides.js"></script>
