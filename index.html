@@ -127,9 +127,9 @@ function days(n){const r=[];for(let i=n-1;i>=0;i--){const d=new Date(Date.now()-
 function streak(){let s=0;for(let i=0;i<30;i++){if(all().some(a=>dk(a.s)==new Date(Date.now()-i*864e5).toDateString()))s++;else if(i>0)break;else continue}return s}
 // charts
 function ring(p){const r=54,c=2*Math.PI*r,v=Math.min(1,p);return `<svg viewBox="0 0 140 140" width="150"><defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" style="stop-color:var(--a)"/><stop offset="1" style="stop-color:var(--b)"/></linearGradient></defs><circle cx="70" cy="70" r="${r}" fill="none" stroke="var(--bd)" stroke-width="12"/><circle cx="70" cy="70" r="${r}" fill="none" stroke="url(#g)" stroke-width="12" stroke-linecap="round" stroke-dasharray="${c*v} ${c}" transform="rotate(-90 70 70)"/><text x="70" y="76" text-anchor="middle" fill="var(--tx)" font-size="26" font-weight="800">${Math.round(p*100)}%</text></svg>`}
-function bars(d,h=130){const mx=Math.max(1,...d.map(x=>x.m)),w=100/d.length;return `<svg viewBox="0 0 100 ${h/2+12}" width="100%" preserveAspectRatio="none" style="height:${h+24}px"><defs><linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--b)"/><stop offset="1" style="stop-color:var(--a)"/></linearGradient></defs>${d.map((x,i)=>{const bh=x.m/mx*(h/2);return `<rect x="${i*w+w*.18}" y="${h/2-bh}" width="${w*.64}" height="${bh}" rx="1.5" fill="url(#b)"/><text x="${i*w+w/2}" y="${h/2+9}" text-anchor="middle" font-size="4" fill="var(--mu)">${x.l}</text>`}).join('')}</svg>`}
+function bars(d,h=130){const mx=Math.max(1,...d.map(x=>x.m));return `<div class="bch" style="--bh:${h}px"><div class="bcb">${d.map(x=>`<div class="bcc"><i class="${x.m>0?'':'z'}" style="height:${x.m>0?Math.max(4,x.m/mx*100):0}%"></i></div>`).join('')}</div><div class="bcx">${d.map(x=>`<span>${x.l==null?'':x.l}</span>`).join('')}</div></div>`}
 function donut(data){const t=data.reduce((x,d)=>x+d.m,0)||1,r=42,c=2*Math.PI*r;let o=0;return `<svg viewBox="0 0 120 120" width="170"><g transform="rotate(-90 60 60)">${data.map(d=>{const l=d.m/t*c,e=`<circle cx="60" cy="60" r="${r}" fill="none" stroke="${C[d.k]}" stroke-width="16" stroke-dasharray="${Math.max(0,l-1)} ${c}" stroke-dashoffset="${-o}"/>`;o+=l;return e}).join('')}</g><text x="60" y="66" text-anchor="middle" fill="var(--tx)" font-size="16" font-weight="800">${fm(t)}</text></svg>`}
-function hourly(){const h=Array(24).fill(0);all().forEach(a=>{if(dk(a.s)==dk(Date.now()))h[new Date(a.s).getHours()]+=mins(a)});return bars(h.map((m,i)=>({m,l:i%3?'':i})),110)}
+function hourly(){const h=Array(24).fill(0);all().forEach(a=>{if(dk(a.s)==dk(Date.now()))h[new Date(a.s).getHours()]+=mins(a)});const z=!h.some(Boolean),o=bars(h.map((m,i)=>({m,l:i%3?'':i})),110);return z?o.replace('<div class="bcb">','<div class="bcb"><b class="bce">No sessions yet today</b>'):o}
 function heat(){const h=Array(24).fill(0);all().forEach(a=>h[new Date(a.s).getHours()]+=mins(a));const mx=Math.max(1,...h);return {html:`<div class="hm">${h.map((v,i)=>`<div title="${i}:00 · ${fm(v)}" style="opacity:${.08+.92*v/mx}"></div>`).join('')}</div><div class="row sp mu" style="margin-top:6px"><span>12am</span><span>12pm</span><span>11pm</span></div>`,best:h.indexOf(mx)}}
 function bycat(n){const m={};all().filter(a=>Date.now()-a.s<n*864e5).forEach(a=>m[a.cat]=(m[a.cat]||0)+mins(a));return Object.keys(C).map(k=>({k,m:m[k]||0}))}
 // views
@@ -6105,6 +6105,16 @@ new MutationObserver(()=>{if(!q)q=requestAnimationFrame(fix)}).observe(M,{childL
 .gs-av .sil{width:100%;height:100%;color:color-mix(in oklab,var(--a) 70%,var(--tx))}
 .gs-pph{color:rgba(255,255,255,.55);overflow:hidden;font-size:0}.gs-pph .sil{width:100%;height:100%;margin-top:14%}
 .sil-w{border-radius:50%;overflow:hidden;background:rgba(128,128,128,.2);color:var(--mu)}.sil-w .sil{width:100%;height:100%;margin-top:14%}
+
+/* crisp bar charts (Today by hour / Last 7 days): real HTML text instead of a stretched SVG */
+.bch{width:100%}
+.bcb{display:flex;align-items:flex-end;gap:clamp(2px,.9%,6px);height:var(--bh,130px);padding:0 2px;border-bottom:1px solid var(--bd)}
+.bcc{flex:1 1 0;min-width:0;height:100%;display:flex;align-items:flex-end}
+.bcc i{display:block;width:100%;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--b),var(--a));box-shadow:0 0 12px -2px var(--glow)}
+.bcc i.z{height:3px!important;border-radius:2px;background:color-mix(in oklab,var(--tx) 14%,transparent);box-shadow:none}
+.bcx{display:flex;gap:clamp(2px,.9%,6px);padding:6px 2px 0}
+.bcx span{flex:1 1 0;min-width:0;text-align:center;font:600 12px/16px var(--sk-font,system-ui,sans-serif);color:var(--tx);opacity:.78;white-space:nowrap;overflow:visible;font-variant-numeric:tabular-nums}
+.bcb{position:relative}.bce{position:absolute;left:0;right:0;top:38%;text-align:center;font:500 13px var(--sk-font,system-ui,sans-serif);color:var(--mu);pointer-events:none}
 </style>
 <script src="alpha-viewers.js"></script>
 <script src="alpha-editor.js"></script>
