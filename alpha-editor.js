@@ -203,9 +203,9 @@
     if (ED && !ED.L.closed) return ED;
     var dark = isDarkEd();
     var html =
-      '<div class="ed-menubar"><button class="av-ib" data-m="exit" aria-label="Back to vault">' + AV.ic('back') + '</button>' +
+      '<div class="ed-menubar"><button class="av-ib" data-m="exit" aria-label="Back to Protected">' + AV.ic('back') + '</button>' +
       ['file:File', 'edit:Edit', 'search:Search', 'view:View', 'enc:Encoding', 'lang:Language'].map(function (x) { var p = x.split(':'); return '<button class="ed-mb" data-m="' + p[0] + '">' + p[1] + '</button>'; }).join('') + '</div>' +
-      '<div class="ed-tb">' + tb('new', 'file', 'New (Ctrl+N)') + tb('open', 'folder', 'Open from vault') + tb('save', 'save', 'Save (Ctrl+S)') + '<i></i>' +
+      '<div class="ed-tb">' + tb('new', 'file', 'New (Ctrl+N)') + tb('open', 'folder', 'Open from Protected') + tb('save', 'save', 'Save (Ctrl+S)') + '<i></i>' +
       tb('cut', 'cut', 'Cut') + tb('copy', 'copy', 'Copy') + tb('paste', 'paste', 'Paste') + '<i></i>' +
       tb('undo', 'undo', 'Undo (Ctrl+Z)') + tb('redo', 'redo', 'Redo (Ctrl+Y)') + '<i></i>' +
       tb('find', 'search', 'Find (Ctrl+F)') + tb('replace', 'edit', 'Replace (Ctrl+H)') + '<i></i>' +
@@ -533,8 +533,8 @@
   }
   async function pickFile(ed) {
     var all = (await AV.records()).filter(function (f) { return AV.kind(f) === 'text'; }).sort(function (a, b) { return (b.edited || b.id) - (a.edited || a.id); });
-    if (!all.length) return AV.toast('No text or code files in the vault yet');
-    AV.sheet('Open from vault', all.length + ' text & code files', all.slice(0, 60).map(function (f) { return { i: 'file', t: f.name, k: AV.fmtSize(f.size || 0), fn: function () { openRec(ed, f); } }; }));
+    if (!all.length) return AV.toast('No text or code files in Protected yet');
+    AV.sheet('Open from Protected', all.length + ' text & code files', all.slice(0, 60).map(function (f) { return { i: 'file', t: f.name, k: AV.fmtSize(f.size || 0), fn: function () { openRec(ed, f); } }; }));
   }
   async function openRec(ed, f) {
     var ex = ed.tabs.find(function (t) { return t.rec && String(t.rec.id) === String(f.id); }); if (ex) return switchTab(ed, ex);
@@ -550,11 +550,11 @@
     var fileA = AV.fileActions(t.rec || { name: t.name }, {});
     switch (which) {
       case 'file': return [
-        { t: 'New', k: 'Ctrl+N', fn: function () { newTab(ed); } }, { t: 'Open from vault…', fn: function () { pickFile(ed); } }, '-',
+        { t: 'New', k: 'Ctrl+N', fn: function () { newTab(ed); } }, { t: 'Open from Protected…', fn: function () { pickFile(ed); } }, '-',
         { t: 'Save', k: 'Ctrl+S', fn: function () { saveTab(ed, t); } }, { t: 'Save as…', k: 'Ctrl+Shift+S', fn: function () { saveTab(ed, t, true); } },
         { t: 'Save all', k: 'Ctrl+Alt+S', fn: async function () { for (var i = 0; i < ed.tabs.length; i++) if (dirty(ed.tabs[i])) await saveTab(ed, ed.tabs[i]); } }, '-',
         { t: 'Rename…', dis: !t.rec, fn: async function () { var n0 = t.name, dot = n0.lastIndexOf('.'), v = await AV.dialog({ t: 'Rename', inp: n0, ok: 'OK', sel: [0, dot > 0 ? dot : n0.length], chk: AV.validName }); if (typeof v !== 'string' || v === n0) return; var fr = await AV.rec(t.rec.id); if (fr) { fr.name = v; fr.edited = Date.now(); await svf(fr); AV.refresh(); t.rec = fr; } t.name = v; if (!t.langSet) t.lang = langFor(v); drawTabs(ed); status(ed); renderSoon(ed); } },
-        { t: 'Reload from vault', dis: !t.rec, fn: async function () { if (dirty(t) && !(await AV.dialog({ t: 'Reload?', b: 'Unsaved changes will be lost.', ok: 'Reload', d: 1 }))) return; var fr = await AV.rec(t.rec.id); if (!fr) return; var d = decode(await AV.bytes(fr)); t.rec = fr; t.text = t.saved = d.text; t.enc = d.enc; t.eol = d.eol; t.undo = []; t.redo = []; ed.ta.value = d.text; render(ed); drawTabs(ed); status(ed); toolState(ed); } }, '-',
+        { t: 'Reload from Protected', dis: !t.rec, fn: async function () { if (dirty(t) && !(await AV.dialog({ t: 'Reload?', b: 'Unsaved changes will be lost.', ok: 'Reload', d: 1 }))) return; var fr = await AV.rec(t.rec.id); if (!fr) return; var d = decode(await AV.bytes(fr)); t.rec = fr; t.text = t.saved = d.text; t.enc = d.enc; t.eol = d.eol; t.undo = []; t.redo = []; ed.ta.value = d.text; render(ed); drawTabs(ed); status(ed); toolState(ed); } }, '-',
         { t: 'Save to device', fn: function () { AV.saveBlob(t.name, new Blob([encode(t)], { type: AV.mimeFor(t.name) })); } },
         { t: 'Share', fn: function () { AV.share(t.name, new Blob([encode(t)], { type: AV.mimeFor(t.name) })); } },
         { t: 'File details', dis: !t.rec, fn: function () { AV.info(t.rec); } }, '-',
