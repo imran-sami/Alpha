@@ -319,7 +319,7 @@ nav button.on{background:linear-gradient(135deg,var(--a),var(--b));color:#fff}
 function ask(msg,ok){const o=document.createElement('div');o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:90;display:flex;align-items:center;justify-content:center;padding:20px';o.innerHTML=`<div class="card" style="background:var(--bg);max-width:340px;text-align:center"><p style="margin-bottom:16px">${msg}</p><div class="row" style="justify-content:center"><button class="btn ghost" id="an">Cancel</button><button class="btn stop" id="ay">Confirm</button></div></div>`;document.body.appendChild(o);o.querySelector('#an').onclick=()=>o.remove();o.querySelector('#ay').onclick=()=>{o.remove();ok()}}
 addEventListener('keydown',e=>{if(e.key=='Escape')shut()});
 function addClk(){const s=$('#main .sub');if(!s)return;s.insertAdjacentHTML('afterend','<div class="card" data-z="cal" style="margin-bottom:16px"><div class="big" id="ck" style="font-size:36px;font-variant-numeric:tabular-nums"></div><div class="mu" id="cdt"></div><div class="mu" id="lc"></div><div class="mu" style="margin-top:6px">📅 Tap to open calendar</div></div>');loc.ask();clk()}
-function clk(){const e=$('#ck');if(!e)return;const n=new Date();e.textContent=n.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});const W=(el,t)=>{if(el&&el.dataset.raw!==t){el.dataset.raw=t;el.textContent=t}};W($('#cdt'),n.toLocaleDateString([], {weekday:'long',day:'numeric',month:'long',year:'numeric'}));W($('#lc'),'📍 '+loc.city+(loc.co?' · '+loc.co:' · '+loc.tz))}setInterval(clk,1000);
+function clk(){const e=$('#ck');if(!e)return;const n=new Date();e.textContent=n.toLocaleTimeString([], Object.assign({hour:'2-digit',minute:'2-digit',second:'2-digit'},window.__tz?window.__tz():{}));const W=(el,t)=>{if(el&&el.dataset.raw!==t){el.dataset.raw=t;el.textContent=t}};W($('#cdt'),n.toLocaleDateString([], Object.assign({weekday:'long',day:'numeric',month:'long',year:'numeric'},window.__tz?window.__tz():{})));W($('#lc'),'📍 '+loc.city+(loc.co?' · '+loc.co:' · '+loc.tz))}setInterval(clk,1000);
 V.cal=()=>cal();
 function cal(){view='cal';const y=cm.getFullYear(),m=cm.getMonth(),f=new Date(y,m,1).getDay(),n=new Date(y,m+1,0).getDate(),c=[];for(let i=0;i<f;i++)c.push('<span></span>');
 for(let d=1;d<=n;d++){const ds=new Date(y,m,d).toDateString(),a=all().some(x=>dk(x.s)==ds),t=tasks.some(x=>x.due&&dk(x.due)==ds);c.push(`<button class="cd ${cd==ds?'on':''}" data-day="${d}" style="${ds==dk(Date.now())?'outline:2px solid var(--b)':''}"><b>${d}</b><span>${a?'<i class="dt" style="background:var(--b)"></i>':''}${t?'<i class="dt" style="background:#f59e0b"></i>':''}</span></button>`)}
@@ -2771,13 +2771,15 @@ function setNameFrom(L,v){const n=getNM(),o=L=='bn'?'en':'bn',tr2=L=='bn'?bn2en:
  if(!n[o]||!diverged||!small)n[o]=tr2(v);
  pname=((n.en||n.bn||'')).trim()||v;ls.s('alpha.name',pname);ls.s('alpha.nm',n)}
 /* ---------- greeting follows the clock ---------- */
-const GE=['Good morning','Good afternoon','Good evening','Good night'],GB=['শুভ সকাল','শুভ অপরাহ্ন','শুভ সন্ধ্যা','শুভ রাত্রি'];
+const GE=['Good Morning','Good Afternoon','Good Evening','Good Night'],GB=['শুভ সকাল','শুভ অপরাহ্ন','শুভ সন্ধ্যা','শুভ রাত্রি'];
 const band=h=>h>=5&&h<12?0:h>=12&&h<17?1:h>=17&&h<21?2:3;
-window.greetText=()=>(lang=='bn'?GB:GE)[band(new Date().getHours())]+', '+dispName();
+window.__tz=()=>{try{return(typeof loc!=='undefined'&&loc&&loc.tz)?{timeZone:loc.tz}:{}}catch(e){return{}}};
+window.__hr=()=>{try{const o=window.__tz();const h=new Intl.DateTimeFormat('en-GB',Object.assign({hour:'numeric',hourCycle:'h23'},o)).formatToParts(new Date()).find(x=>x.type==='hour');const v=h?parseInt(h.value,10)%24:NaN;return isNaN(v)?new Date().getHours():v}catch(e){return new Date().getHours()}};
+window.greetText=()=>(lang=='bn'?GB:GE)[band(window.__hr())]+', '+dispName();
 const paintG=()=>{const h=document.getElementById('greet');if(h&&h.isConnected){const t=greetText();if(h.textContent!==t)h.textContent=t}};
 setInterval(paintG,15000);document.addEventListener('visibilitychange',paintG);
 const DL=()=>lang=='bn'?'bn-BD':[];
-const fixD=()=>{const e=document.getElementById('cdt');if(e&&e.closest('.cmp')){const t=new Date().toLocaleDateString(DL(),{weekday:'short',day:'numeric',month:'short',year:'numeric'});if(e.textContent!==t)e.textContent=t}};
+const fixD=()=>{const e=document.getElementById('cdt');if(e&&e.closest('.cmp')){const t=new Date().toLocaleDateString(DL(),Object.assign({weekday:'short',day:'numeric',month:'short',year:'numeric'},window.__tz?window.__tz():{}));if(e.textContent!==t)e.textContent=t}};
 setInterval(fixD,1000);
 const _d=dash;dash=function(){_d.apply(this,arguments);const h=document.querySelector('#main h1');if(h){h.id='greet';h.textContent=greetText()}const sb=document.querySelector('#main>.sub');if(sb)sb.textContent=new Date().toLocaleDateString(DL(),{weekday:'long',month:'long',day:'numeric'})};V.dash=dash;
 /* ---------- settings: name box shows / edits the name for the current language ---------- */
@@ -3116,7 +3118,6 @@ html body #main .card{background:linear-gradient(180deg,rgba(17,23,46,.78),rgba(
 #main .hd~.sub{display:none}
 #main .hl h1{font:700 26px/30px var(--sk-font);letter-spacing:-.015em;margin:0 0 6px;background:none!important;-webkit-text-fill-color:#f1f1f9;color:#f1f1f9;overflow-wrap:normal;white-space:nowrap}
 #main .hl h1 .nm{background:linear-gradient(90deg,#c561b8,#b868c6);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
-#main .hl h1 .nm::after{content:"*";display:inline-block;font-size:.62em;font-weight:600;vertical-align:top;position:relative;top:-.1em;margin-left:3px;color:#aab3d6;-webkit-text-fill-color:#aab3d6}
 
 /* clock / date / place pill */
 #main .hl>.card.cmp{display:inline-flex;align-items:center;width:max-content;max-width:100%;height:30px;margin:0!important;padding:0 17px 0 11px!important;border-radius:16px!important;background:linear-gradient(180deg,rgba(32,40,76,.55),rgba(20,26,54,.55))!important;border:1px solid rgba(255,255,255,.06)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)!important;cursor:pointer}
@@ -6162,4 +6163,68 @@ html:root body .fab #th img{position:absolute;inset:0;width:100%;height:100%;obj
 <script src="alpha-viewers.js"></script>
 <script src="alpha-editor.js"></script>
 <script src="alpha-slides.js"></script>
+<style id="alpha-fab-home">html body .mlogo.mn-off{display:none!important}html body .fab{will-change:transform}html body .fab.fab-off{display:none!important}</style>
+<script id="alpha-fab-home-js">
+/* Top-right profile + lock icons.
+   WEB: Home only, scroll away with the page.
+   ANDROID app: header (ALPHA logo + profile + lock) stays pinned like before, but is shown on Home only. */
+(function(){
+ var fab=document.querySelector('.fab'),main=document.getElementById('main');
+ if(!fab||!main)return;
+ var native=!!window.__ALPHA_ANDROID;
+ try{if(!native&&window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform())native=true}catch(e){}
+ var raf=0;
+ function sync(){
+  raf=0;
+  var home=false;
+  try{home=(typeof view!=='undefined')&&view==='dash'}catch(e){}
+  fab.classList.toggle('fab-off',!home);
+  var lg=document.querySelector('.mlogo');
+  if(native){
+   fab.style.transform='';
+   if(lg)lg.classList.toggle('mn-off',!home);
+  }else{
+   fab.style.transform=home?'translateY('+(-main.scrollTop)+'px)':'';
+   if(lg)lg.classList.remove('mn-off');
+  }
+ }
+ function q(){if(!raf)raf=requestAnimationFrame(sync)}
+ main.addEventListener('scroll',q,{passive:true});
+ new MutationObserver(q).observe(main,{childList:true});
+ document.addEventListener('click',function(){setTimeout(q,0);setTimeout(q,120)},true);
+ window.addEventListener('resize',q);
+ setInterval(sync,400);
+ sync();
+})();
+</script>
+<style id="alpha-clock-stable">#main .hl #ck{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;text-align:left}#main .hl #ck,#main .hl #cdt,#main .hl #lc{flex:none}</style>
+<script id="alpha-clock-stable-js">
+/* Keep the clock pill a fixed width so the layout never jitters as seconds change */
+(function(){
+ var main=document.getElementById('main');if(!main)return;
+ var busy=false;
+ function lock(){
+  if(busy)return;var ck=document.getElementById('ck');if(!ck)return;
+  busy=true;
+  try{
+   var t=ck.textContent,cs=getComputedStyle(ck);
+   var best='0',bw=0,m=document.createElement('span');
+   m.style.cssText='position:absolute;visibility:hidden;white-space:nowrap;font:'+cs.font+';font-variant-numeric:tabular-nums;letter-spacing:'+cs.letterSpacing;
+   document.body.appendChild(m);
+   for(var i=0;i<10;i++){m.textContent=String(i).repeat(4);var w=m.getBoundingClientRect().width;if(w>bw){bw=w;best=String(i)}}
+   var suf=(t.match(/\s*[^\d:\s]+\s*$/)||[''])[0];
+   var wide=t.replace(/\d/g,best);
+   var wide2=suf?wide.replace(suf,suf.replace(/[AP]/i,'M')):wide;
+   m.textContent=wide2;var W=Math.ceil(m.getBoundingClientRect().width);
+   m.textContent=wide;W=Math.max(W,Math.ceil(m.getBoundingClientRect().width));m.remove();
+   var pad=parseFloat(cs.paddingRight)||0,gap=parseFloat(cs.columnGap)||7;
+   ck.style.minWidth=(W+pad+gap+14+2)+'px';
+  }catch(e){}
+  busy=false;
+ }
+ new MutationObserver(function(){setTimeout(lock,0)}).observe(main,{childList:true});
+ window.addEventListener('resize',lock);
+ setTimeout(lock,300);setInterval(function(){var c=document.getElementById('ck');if(c&&!c.style.minWidth)lock()},1000);
+})();
+</script>
 </body></html>
